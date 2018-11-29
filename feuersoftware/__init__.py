@@ -40,7 +40,7 @@ class PublicAPI(object):
             except Exception as e:
                 _LOGGER.warning("Validation error: {0}. Ignoring argument.".format(e))
         if position:
-            vposition = vol.Schema({vol.Optional('position'): vol.All(str, vol.Match(r"\d{1,3}\.\d+,\s?\d{1,3}\.\d+", "Not a valid WSG84 coordinate"))})
+            vposition = vol.Schema({vol.Optional('position'): vol.All(str, vol.Match(r"-?\d{1,3}\.\d+,\s?-?\d{1,3}\.\d+", "Not a valid WSG84 coordinate"))})
             try:
                 data.append(('position', {k: float(v) for k, v in zip(["latitude","longitude"] ,vposition({"position":position}).get("position").replace(" ","").split(","))}))
             except Exception as e:
