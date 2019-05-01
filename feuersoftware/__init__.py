@@ -20,11 +20,11 @@ class PublicAPI(object):
         self._url = None
 
 
-    def operation(self, start, keyword, address=None, position=None, facts=None, ric=None, properties=None):
+    def operation(self, start, keyword, address=None, position=None, facts=None, ric=None, properties=None, update_strategy='none'):
         if not self._headers:
             _LOGGER.error("Aborting, API not initialized")
             return
-        self._url = "https://connectapi.feuersoftware.com/interfaces/public/operation"
+        self._url = f"https://connectapi.feuersoftware.com/interfaces/public/operation?updateStrategy={update_startegy}"
         data = {}
         data['start'] = start
         data['keyword'] = keyword
@@ -56,7 +56,7 @@ class PublicAPI(object):
     def send(self):
         r = requests.post(self._url, data=json.dumps(self._body), headers=self._headers)
         if r.status_code != 200:
-            _LOGGER.error("Error while sending API call: {0}".format(r.text))
+            _LOGGER.error("Error while sending API call: {0} {1}".format(r.status_text, r.text))
         else:
             _LOGGER.info("Success, API call complete")
 
