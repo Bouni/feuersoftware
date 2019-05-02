@@ -21,7 +21,9 @@ api.operation(
     position="47.616239,9.3392483", 
     facts="Küchenbrand", 
     ric="10B", 
-    properties=[{"key":"Fettbrand":"value":"Nein"},{"Noch Personen im Gebäude","Ja"}])
+    properties=[{"key":"Fettbrand":"value":"Nein"},{"Noch Personen im Gebäude","Ja"}],
+    updateStrategy="none"
+    )
 api.send()
 
 # Fahzeug Status setzen

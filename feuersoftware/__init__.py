@@ -12,7 +12,7 @@ class PublicAPI(object):
     def __init__(self, token):
         self._headers = None
         self._headers = {
-            'authorization': 'bearer {0}'.format(token)),
+            'authorization': 'bearer {0}'.format(token),
             'accept': 'application/json',
             'content-type': 'application/json',
             }
