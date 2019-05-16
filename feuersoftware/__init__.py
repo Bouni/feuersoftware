@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import json
 import logging
 import requests
 
@@ -24,7 +25,7 @@ class PublicAPI(object):
         if not self._headers:
             _LOGGER.error("Aborting, API not initialized")
             return
-        self._url = f"https://connectapi.feuersoftware.com/interfaces/public/operation?updateStrategy={update_startegy}"
+        self._url = f"https://connectapi.feuersoftware.com/interfaces/public/operation?updateStrategy={update_strategy}"
         data = {}
         data['start'] = start
         data['keyword'] = keyword
