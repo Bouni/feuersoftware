@@ -21,7 +21,11 @@ class PublicAPI(object):
         self._url = None
 
 
-    def operation(self, start, keyword, address=None, position=None, facts=None, ric=None, properties=None, update_strategy='none'):
+    def operation(self, start, keyword, status='new',
+                  alarm_enabled=True, address=None, position=None,
+                  facts=None, ric=None, number=None, properties=None,
+                  update_strategy='none'):
+        self._body = None
         if not self._headers:
             _LOGGER.error("Aborting, API not initialized")
             return
@@ -29,6 +33,10 @@ class PublicAPI(object):
         data = {}
         data['start'] = start
         data['keyword'] = keyword
+        if status:
+            data['status'] = status
+        if alarm_enabled:
+            data['alarm_enabled'] = alarm_enabled
         if address:
             data['address'] = address
         if position:
@@ -37,12 +45,15 @@ class PublicAPI(object):
             data['facts'] = facts
         if ric:
             data['ric'] = ric
+        if number:
+            data['number'] = number
         if properties:
             data['properties'] = properties
         self._body = data
 
 
     def vehicle_status(self, radioid, status, position=None):
+        self._body = None
         if not self._headers:
             _LOGGER.error("Aborting, API not initialized")
             return
@@ -55,9 +66,11 @@ class PublicAPI(object):
 
 
     def send(self):
-        r = requests.post(self._url, data=json.dumps(self._body), headers=self._headers)
-        if r.status_code != 200:
-            _LOGGER.error("Error while sending API call: {0} {1}".format(r.status_text, r.text))
-        else:
-            _LOGGER.info("Success, API call complete")
-
+        if self._body and self._headers and self._url:
+            r = requests.post(self._url, data=json.dumps(self._body), headers=self._headers)
+            if r.status_code != 200:
+                _LOGGER.error("Error while sending API call: {0} {1}".format(r.status_text, r.text))
+            else:
+                _LOGGER.info("Success, API call complete")
+            return r
+        return
