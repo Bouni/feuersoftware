@@ -68,8 +68,8 @@ class PublicAPI(object):
     def send(self):
         if self._body and self._headers and self._url:
             r = requests.post(self._url, data=json.dumps(self._body), headers=self._headers)
-            if r.status_code != 200:
-                _LOGGER.error("Error while sending API call: {0} {1}".format(r.status_text, r.text))
+            if r.status_code not in range(200, 300):
+                _LOGGER.error("Error while sending API call: {0} {1}".format(r.status_code, r.text))
             else:
                 _LOGGER.info("Success, API call complete")
             return r
