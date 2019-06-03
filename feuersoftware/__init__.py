@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import re
@@ -17,60 +18,38 @@ class PublicAPI(object):
             'accept': 'application/json',
             'content-type': 'application/json',
             }
-        self._body = None
-        self._url = None
 
 
-    def operation(self, start, keyword, status='new',
-                  alarm_enabled=True, address=None, position=None,
-                  facts=None, ric=None, number=None, properties=None,
-                  update_strategy='none'):
-        self._body = None
-        if not self._headers:
-            _LOGGER.error("Aborting, API not initialized")
-            return
-        self._url = f"https://connectapi.feuersoftware.com/interfaces/public/operation?updateStrategy={update_strategy}"
-        data = {}
-        data['start'] = start
-        data['keyword'] = keyword
-        if status:
-            data['status'] = status
-        if alarm_enabled:
-            data['alarm_enabled'] = alarm_enabled
-        if address:
-            data['address'] = address
-        if position:
-            data['position'] = position
-        if facts:
-            data['facts'] = facts
-        if ric:
-            data['ric'] = ric
-        if number:
-            data['number'] = number
-        if properties:
-            data['properties'] = properties
-        self._body = data
-
-
-    def vehicle_status(self, radioid, status, position=None):
-        self._body = None
-        if not self._headers:
-            _LOGGER.error("Aborting, API not initialized")
-            return
-        self._url = "https://connectapi.feuersoftware.com/interfaces/public/vehicle/{}/status".format(radioid)
-        data = {}
-        data['status'] = status
-        if position:
-            data['position'] = position
-        self._body = data
-
-
-    def send(self):
-        if self._body and self._headers and self._url:
-            r = requests.post(self._url, data=json.dumps(self._body), headers=self._headers)
-            if r.status_code not in range(200, 300):
-                _LOGGER.error("Error while sending API call: {0} {1}".format(r.status_code, r.text))
+    def post_operation(self, start, keyword, update_strategy='none', **kwargs):
+        """Start, update, cancel or close an operation. https://connectapi.feuersoftware.com/swagger/ui/index#!/Public32API/Public_PostOperation"""
+        self._url = "https://connectapi.feuersoftware.com/interfaces/public/operation?updateStrategy={0}".format(update_strategy)
+        valid_args = ("end", "status", "alarm_enabled", "address", "position", "facts", "ric", "number", "properties")
+        data = {"start": start, "keyword": keyword}
+        for k, v in kwargs.items():
+            if k in valid_args:
+                data[k] = v
             else:
-                _LOGGER.info("Success, API call complete")
-            return r
-        return
+                _LOGGER.warning("Invalid argument passed to post_operation: {0}={1}".format(k, v))
+        r = requests.post(self._url, data=json.dumps(data), headers=self._headers)
+        if r.status_code != 204:
+            _LOGGER.error("Error while sending API call 'post operation': {0} {1}".format(r.status_code, r.text))
+        else:
+            _LOGGER.info("Success, API call 'post operation' complete")
+        return r
+
+
+    def post_vehicle_status(self, radioid, status, **kwargs):
+        self._url = "https://connectapi.feuersoftware.com/interfaces/public/vehicle/{0}/status".format(radioid)
+        valid_args = ("position")
+        data = {"status": status}
+        for k, v in kwargs.items():
+            if k in valid_args:
+                data[k] = v
+            else:
+                _LOGGER.warning("Invalid argument passed to post_vehicle_status: {0}={1}".format(k, v))
+        r = requests.post(self._url, data=json.dumps(data), headers=self._headers)
+        if r.status_code != 204:
+            _LOGGER.error("Error while sending API call 'post vehicle status': {0} {1}".format(r.status_code, r.text))
+        else:
+            _LOGGER.info("Success, API call 'post vehicle status' complete")
+        return r
