@@ -114,3 +114,17 @@ def test_invalid_arg_post_operation(mock_requests, mock_warning, mock_info):
     mock_info.assert_called_with("Success, API call 'post operation' complete")
 
 
+@patch("feuersoftware.logging.Logger.error")
+@patch("feuersoftware.requests")
+def test_error_post_operation(mock_requests, mock_error):
+    mock_requests.post.return_value.status_code = 401
+    mock_requests.post.return_value.text = "unauthorized"
+    api = PublicAPI("ABCD")
+    api.post_operation(
+        start = "2019-06-01T12:00:00",
+        keyword = "Brand 2",
+    )
+
+    mock_error.assert_called_with("Error while sending API call 'post operation': 401 unauthorized")
+
+

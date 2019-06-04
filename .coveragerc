@@ -1,0 +1,10 @@
+[paths]
+source =
+    ../feuersoftware
+
+[run]
+branch = true
+parallel = true
+source =
+    feuersoftware
+    

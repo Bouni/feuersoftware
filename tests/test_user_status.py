@@ -86,3 +86,16 @@ def test_post_user_status_invalid_arg(mock_requests, mock_warning, mock_info):
         "content-type": "application/json"})
 
     mock_info.assert_called_with("Success, API call 'post user status' complete")
+
+@patch("feuersoftware.logging.Logger.error")
+@patch("feuersoftware.requests")
+def test_error_post_user_status(mock_requests, mock_error):
+    mock_requests.post.return_value.status_code = 401
+    mock_requests.post.return_value.text = "unauthorized"
+    api = PublicAPI("ABCD")
+    api.post_user_status(
+        username = "Max Mustermann",
+        status = "coming",
+    )
+
+    mock_error.assert_called_with("Error while sending API call 'post user status': 401 unauthorized")
