@@ -112,3 +112,5 @@ def test_invalid_arg_post_operation(mock_requests, mock_warning, mock_info):
         "content-type": "application/json"})
 
     mock_info.assert_called_with("Success, API call 'post operation' complete")
+
+
