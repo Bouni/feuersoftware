@@ -22,7 +22,7 @@ TOKEN = '2xgRoQfoMGb4IveCDJIZqOO1l8hZZ5jT5mAw7SSk1otrFSq50IA2HIYB3luEpv7Vw8BWwG'
 @patch("feuersoftware.logging.Logger.info")
 @patch("feuersoftware.requests")
 def test_post_user_status_minimal(mock_requests, mock_info):
-    mock_requests.post.return_value.status_code = 204
+    mock_requests.post.return_value.status_code = 200
     api = PublicAPI(TOKEN)
     api.post_user_status(
         username = "Max Mustermann",
@@ -42,7 +42,7 @@ def test_post_user_status_minimal(mock_requests, mock_info):
 @patch("feuersoftware.logging.Logger.info")
 @patch("feuersoftware.requests")
 def test_post_user_status_full(mock_requests, mock_info):
-    mock_requests.post.return_value.status_code = 204
+    mock_requests.post.return_value.status_code = 200
     api = PublicAPI(TOKEN)
     api.post_user_status(
         username = "Max Mustermann",
@@ -68,7 +68,7 @@ def test_post_user_status_full(mock_requests, mock_info):
 @patch("feuersoftware.logging.Logger.warning")
 @patch("feuersoftware.requests")
 def test_post_user_status_invalid_arg(mock_requests, mock_warning, mock_info):
-    mock_requests.post.return_value.status_code = 204
+    mock_requests.post.return_value.status_code = 200
     api = PublicAPI(TOKEN)
     api.post_user_status(
         username = "Max Mustermann",

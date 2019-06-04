@@ -76,7 +76,7 @@ class PublicAPI(object):
             else:
                 _LOGGER.warning("Invalid argument passed to post_user_status: {0}={1}".format(k, v))
         r = requests.post(self._url, data=json.dumps(data), headers=self._headers)
-        if r.status_code != 204:
+        if r.status_code != 200:
             _LOGGER.error("Error while sending API call 'post user status': {0} {1}".format(r.status_code, r.text))
         else:
             _LOGGER.info("Success, API call 'post user status' complete")
