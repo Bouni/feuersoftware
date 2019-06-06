@@ -27,9 +27,7 @@ def test_minimal_post_operation(mock_requests, mock_info):
     api = PublicAPI(TOKEN)
     api.post_operation(
         start = "2019-06-01T12:00:00",
-        keyword = "Brand 2",
-    )
-
+        keyword = "Brand 2")
     mock_requests.post.assert_called_once_with(
         f"https://connectapi.feuersoftware.com/interfaces/public/operation?updateStrategy=none",
         data='{'
@@ -38,7 +36,6 @@ def test_minimal_post_operation(mock_requests, mock_info):
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
         "content-type": "application/json"})
-
     mock_info.assert_called_with("Success, API call 'post operation' complete")
 
 
@@ -53,7 +50,7 @@ def test_full_post_operation(mock_requests, mock_info):
         keyword = "Brand 2",
         update_strategy = "none",
         status = "new",
-        alarm_enabled = True,
+        alarmenabled = True,
         address = "Teststrasse 10, 12345 Musterstadt",
         position = {"latitude":"47.592127", "longitude":"8.296870"},
         facts =  "Küchenbrand",
@@ -61,9 +58,7 @@ def test_full_post_operation(mock_requests, mock_info):
         number = 54321,
         properties = [
             {"key":"Fettbrand","value":"Nein"},
-            {"key":"Noch·Personen·im·Gebäude","value":"Ja"}],
-        )
-
+            {"key":"Noch·Personen·im·Gebäude","value":"Ja"}])
     mock_requests.post.assert_called_once_with(
         f"https://connectapi.feuersoftware.com/interfaces/public/operation?updateStrategy=none",
         data='{'
@@ -71,7 +66,7 @@ def test_full_post_operation(mock_requests, mock_info):
              '"keyword": "Brand 2", '
              '"end": "2019-06-01T14:00:00", '
              '"status": "new", '
-             '"alarm_enabled": true, '
+             '"alarmenabled": true, '
              '"address": "Teststrasse 10, 12345 Musterstadt", '
              '"position": {"latitude": "47.592127", "longitude": "8.296870"}, '
              '"facts": "K\\u00fcchenbrand", '
@@ -84,7 +79,6 @@ def test_full_post_operation(mock_requests, mock_info):
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
         "content-type": "application/json"})
-
     mock_info.assert_called_with("Success, API call 'post operation' complete")
 
 
@@ -97,11 +91,8 @@ def test_invalid_arg_post_operation(mock_requests, mock_warning, mock_info):
     api.post_operation(
         start = "2019-06-01T12:00:00",
         keyword = "Brand 2",
-        invalid_arg = "invalid"
-    )
-
+        invalid_arg = "invalid")
     mock_warning.assert_called_with('Invalid argument passed to post_operation: invalid_arg=invalid')
-
     mock_requests.post.assert_called_once_with(
         f"https://connectapi.feuersoftware.com/interfaces/public/operation?updateStrategy=none",
         data='{'
@@ -110,7 +101,6 @@ def test_invalid_arg_post_operation(mock_requests, mock_warning, mock_info):
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
         "content-type": "application/json"})
-
     mock_info.assert_called_with("Success, API call 'post operation' complete")
 
 
@@ -122,9 +112,30 @@ def test_error_post_operation(mock_requests, mock_error):
     api = PublicAPI("ABCD")
     api.post_operation(
         start = "2019-06-01T12:00:00",
-        keyword = "Brand 2",
-    )
-
+        keyword = "Brand 2")
     mock_error.assert_called_with("Error while sending API call 'post operation': 401 unauthorized")
 
 
+@patch("feuersoftware.logging.Logger.info")
+@patch("feuersoftware.requests")
+def test_get_operation(mock_requests, mock_info):
+    mock_requests.get.return_value.status_code = 200
+    mock_requests.get.return_value.text = "[]"
+    api = PublicAPI(TOKEN)
+    r = api.get_operation()
+    mock_requests.get.assert_called_once_with(
+        f"https://connectapi.feuersoftware.com/interfaces/public/operation",
+        headers={"authorization": f"bearer {TOKEN}",
+        "accept": "application/json",
+        "content-type": "application/json"})
+    mock_info.assert_called_with("Success, API call 'get operation' complete")
+
+
+@patch("feuersoftware.logging.Logger.error")
+@patch("feuersoftware.requests")
+def test_error_get_operation(mock_requests, mock_error):
+    mock_requests.get.return_value.status_code = 401
+    mock_requests.get.return_value.text = "unauthorized"
+    api = PublicAPI("ABCD")
+    r = api.get_operation()
+    mock_error.assert_called_with("Error while sending API call 'get operation': 401 unauthorized")

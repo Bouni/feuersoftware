@@ -26,4 +26,3 @@ def test_missing_token():
 def test_token_set():
     api = PublicAPI(TOKEN)
     assert TOKEN in api._headers["authorization"]
-

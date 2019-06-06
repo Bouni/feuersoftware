@@ -26,16 +26,13 @@ def test_post_vehicle_status_minimal(mock_requests, mock_info):
     api = PublicAPI(TOKEN)
     api.post_vehicle_status(
         radioid = 12345,
-        status = "2"
-    )
-
+        status = "2")
     mock_requests.post.assert_called_once_with(
         'https://connectapi.feuersoftware.com/interfaces/public/vehicle/12345/status',
         data='{"status": "2"}',
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
         "content-type": "application/json"})
-
     mock_info.assert_called_with("Success, API call 'post vehicle status' complete")
 
 
@@ -47,9 +44,7 @@ def test_post_vehicle_status_full(mock_requests, mock_info):
     api.post_vehicle_status(
         radioid = 12345,
         status = "2",
-        position = {"latitude":"47.592127", "longitude":"8.296870"},
-    )
-
+        position = {"latitude":"47.592127", "longitude":"8.296870"})
     mock_requests.post.assert_called_once_with(
         'https://connectapi.feuersoftware.com/interfaces/public/vehicle/12345/status',
         data='{'
@@ -59,7 +54,6 @@ def test_post_vehicle_status_full(mock_requests, mock_info):
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
         "content-type": "application/json"})
-
     mock_info.assert_called_with("Success, API call 'post vehicle status' complete")
 
 
@@ -72,18 +66,14 @@ def test_post_vehicle_status_invalid_arg(mock_requests, mock_warning, mock_info)
     api.post_vehicle_status(
         radioid = 12345,
         status = "2",
-        invalid_arg = "invalid"
-    )
-
+        invalid_arg = "invalid")
     mock_warning.assert_called_with('Invalid argument passed to post_vehicle_status: invalid_arg=invalid')
-
     mock_requests.post.assert_called_once_with(
         'https://connectapi.feuersoftware.com/interfaces/public/vehicle/12345/status',
         data='{"status": "2"}',
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
         "content-type": "application/json"})
-
     mock_info.assert_called_with("Success, API call 'post vehicle status' complete")
 
 
@@ -95,7 +85,5 @@ def test_error_post_vehicle_status(mock_requests, mock_error):
     api = PublicAPI("ABCD")
     api.post_vehicle_status(
         radioid = 12345,
-        status = "2",
-    )
-
+        status = "2")
     mock_error.assert_called_with("Error while sending API call 'post vehicle status': 401 unauthorized")

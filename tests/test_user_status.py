@@ -22,34 +22,29 @@ TOKEN = '2xgRoQfoMGb4IveCDJIZqOO1l8hZZ5jT5mAw7SSk1otrFSq50IA2HIYB3luEpv7Vw8BWwG'
 @patch("feuersoftware.logging.Logger.info")
 @patch("feuersoftware.requests")
 def test_post_user_status_minimal(mock_requests, mock_info):
-    mock_requests.post.return_value.status_code = 200
+    mock_requests.post.return_value.status_code = 204
     api = PublicAPI(TOKEN)
     api.post_user_status(
         username = "Max Mustermann",
-        status = "coming"
-    )
-
+        status = "coming")
     mock_requests.post.assert_called_once_with(
         'https://connectapi.feuersoftware.com/interfaces/public/operation/userstatus',
         data='{"username": "Max Mustermann", "status": "coming"}',
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
         "content-type": "application/json"})
-
     mock_info.assert_called_with("Success, API call 'post user status' complete")
 
 
 @patch("feuersoftware.logging.Logger.info")
 @patch("feuersoftware.requests")
 def test_post_user_status_full(mock_requests, mock_info):
-    mock_requests.post.return_value.status_code = 200
+    mock_requests.post.return_value.status_code = 204
     api = PublicAPI(TOKEN)
     api.post_user_status(
         username = "Max Mustermann",
         status = "coming",
-        operationid = 12345
-    )
-
+        operationid = 12345)
     mock_requests.post.assert_called_once_with(
         'https://connectapi.feuersoftware.com/interfaces/public/operation/userstatus',
         data='{'
@@ -60,7 +55,6 @@ def test_post_user_status_full(mock_requests, mock_info):
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
         "content-type": "application/json"})
-
     mock_info.assert_called_with("Success, API call 'post user status' complete")
 
 
@@ -68,23 +62,19 @@ def test_post_user_status_full(mock_requests, mock_info):
 @patch("feuersoftware.logging.Logger.warning")
 @patch("feuersoftware.requests")
 def test_post_user_status_invalid_arg(mock_requests, mock_warning, mock_info):
-    mock_requests.post.return_value.status_code = 200
+    mock_requests.post.return_value.status_code = 204
     api = PublicAPI(TOKEN)
     api.post_user_status(
         username = "Max Mustermann",
         status = "coming",
-        invalid_arg = "invalid"
-    )
-
+        invalid_arg = "invalid")
     mock_warning.assert_called_with('Invalid argument passed to post_user_status: invalid_arg=invalid')
-
     mock_requests.post.assert_called_once_with(
         'https://connectapi.feuersoftware.com/interfaces/public/operation/userstatus',
         data='{"username": "Max Mustermann", "status": "coming"}',
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
         "content-type": "application/json"})
-
     mock_info.assert_called_with("Success, API call 'post user status' complete")
 
 @patch("feuersoftware.logging.Logger.error")
@@ -95,7 +85,5 @@ def test_error_post_user_status(mock_requests, mock_error):
     api = PublicAPI("ABCD")
     api.post_user_status(
         username = "Max Mustermann",
-        status = "coming",
-    )
-
+        status = "coming")
     mock_error.assert_called_with("Error while sending API call 'post user status': 401 unauthorized")

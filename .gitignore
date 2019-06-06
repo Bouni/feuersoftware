@@ -103,3 +103,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+tests/raw_api.py
+tests/real_api.py
