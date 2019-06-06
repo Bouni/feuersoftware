@@ -171,3 +171,23 @@ class PublicAPI(object):
         else:
             _LOGGER.info("Success, API call 'delete news' complete")
         return r
+
+
+    def put_news(self, id, title, content, start, end, **kwargs):
+        """Update a news entry."""
+        self._url = "https://connectapi.feuersoftware.com/interfaces/public/news/{0}".format(id)
+        valid_args = ("groups", "mailinglists", "site")
+        data = {"title": title, "content": content, "start": start, "end": end}
+        for k, v in kwargs.items():
+            if k in valid_args:
+                data[k] = v
+            else:
+                _LOGGER.warning("Invalid argument passed to put_news: {0}={1}".format(k, v))
+        r = requests.put(self._url, data=json.dumps(data), headers=self._headers)
+        if r.status_code != 200:
+            _LOGGER.error("Error while sending API call 'put news': {0} {1}".format(r.status_code, r.text))
+        else:
+            _LOGGER.info("Success, API call 'put news' complete")
+        return r
+
+
