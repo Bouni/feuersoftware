@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="feuersoftware",
-    version="0.0.7",
+    version="0.1.2",
     author="Bouni",
     author_email="bouni@owee.de",
     description="A Feuersoftware public API implementation",

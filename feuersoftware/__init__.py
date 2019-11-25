@@ -6,8 +6,7 @@ import json
 import logging
 import requests
 
-logging.basicConfig(level=logging.INFO)
-_LOGGER = logging.getLogger("Feuersoftware API")
+LOGGER = logging.getLogger(__name__)
 
 class PublicAPI(object):
 
@@ -25,9 +24,9 @@ class PublicAPI(object):
         self._url = "https://connectapi.feuersoftware.com/interfaces/public/operation"
         r = requests.get(self._url, headers=self._headers)
         if r.status_code != 200:
-            _LOGGER.error("Error while sending API call 'get operation': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'get operation': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'get operation' complete")
+            LOGGER.info("Success, API call 'get operation' complete")
         return r
 
 
@@ -40,13 +39,13 @@ class PublicAPI(object):
             if k in valid_args:
                 data[k] = v
             else:
-                _LOGGER.warning("Invalid argument passed to post_operation: {0}={1}".format(k, v))
+                LOGGER.warning("Invalid argument passed to post_operation: {0}={1}".format(k, v))
         print(json.dumps(data))
         r = requests.post(self._url, data=json.dumps(data), headers=self._headers)
         if r.status_code != 204:
-            _LOGGER.error("Error while sending API call 'post operation': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'post operation': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'post operation' complete")
+            LOGGER.info("Success, API call 'post operation' complete")
         return r
 
 
@@ -59,12 +58,12 @@ class PublicAPI(object):
             if k in valid_args:
                 data[k] = v
             else:
-                _LOGGER.warning("Invalid argument passed to post_vehicle_status: {0}={1}".format(k, v))
+                LOGGER.warning("Invalid argument passed to post_vehicle_status: {0}={1}".format(k, v))
         r = requests.post(self._url, data=json.dumps(data), headers=self._headers)
         if r.status_code != 204:
-            _LOGGER.error("Error while sending API call 'post vehicle status': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'post vehicle status': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'post vehicle status' complete")
+            LOGGER.info("Success, API call 'post vehicle status' complete")
         return r
 
 
@@ -77,12 +76,12 @@ class PublicAPI(object):
             if k in valid_args:
                 data[k] = v
             else:
-                _LOGGER.warning("Invalid argument passed to post_user_status: {0}={1}".format(k, v))
+                LOGGER.warning("Invalid argument passed to post_user_status: {0}={1}".format(k, v))
         r = requests.post(self._url, data=json.dumps(data), headers=self._headers)
         if r.status_code != 204:
-            _LOGGER.error("Error while sending API call 'post user status': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'post user status': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'post user status' complete")
+            LOGGER.info("Success, API call 'post user status' complete")
         return r
 
 
@@ -91,9 +90,9 @@ class PublicAPI(object):
         self._url = "https://connectapi.feuersoftware.com/interfaces/public/alarmgroup"
         r = requests.get(self._url, headers=self._headers)
         if r.status_code != 200:
-            _LOGGER.error("Error while sending API call 'get alarmgroup': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'get alarmgroup': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'get alarmgroup' complete")
+            LOGGER.info("Success, API call 'get alarmgroup' complete")
         return r
 
 
@@ -103,9 +102,9 @@ class PublicAPI(object):
         data = {"id":id, "name":name, "users":users}
         r = requests.put(self._url, data=json.dumps(data), headers=self._headers)
         if r.status_code != 200:
-            _LOGGER.error("Error while sending API call 'put alarmgroup': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'put alarmgroup': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'put alarmgroup' complete")
+            LOGGER.info("Success, API call 'put alarmgroup' complete")
         return r
 
 
@@ -115,9 +114,9 @@ class PublicAPI(object):
         data = {"address": address}
         r = requests.get(self._url, data=json.dumps(data), headers=self._headers)
         if r.status_code != 200:
-            _LOGGER.error("Error while sending API call 'get geocoding': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'get geocoding': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'get geocoding' complete")
+            LOGGER.info("Success, API call 'get geocoding' complete")
         return r
 
 
@@ -127,9 +126,9 @@ class PublicAPI(object):
         data = {"password": password}
         r = requests.post(self._url, data=json.dumps(data), headers=self._headers)
         if r.status_code != 200:
-            _LOGGER.error("Error while sending API call 'post passwordcheck': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'post passwordcheck': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'post passwordcheck' complete")
+            LOGGER.info("Success, API call 'post passwordcheck' complete")
         return r
 
 
@@ -138,9 +137,9 @@ class PublicAPI(object):
         self._url = "https://connectapi.feuersoftware.com/interfaces/public/news"
         r = requests.get(self._url, headers=self._headers)
         if r.status_code != 200:
-            _LOGGER.error("Error while sending API call 'get news': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'get news': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'get news' complete")
+            LOGGER.info("Success, API call 'get news' complete")
         return r
 
 
@@ -153,12 +152,12 @@ class PublicAPI(object):
             if k in valid_args:
                 data[k] = v
             else:
-                _LOGGER.warning("Invalid argument passed to post_news: {0}={1}".format(k, v))
+                LOGGER.warning("Invalid argument passed to post_news: {0}={1}".format(k, v))
         r = requests.post(self._url, data=json.dumps(data), headers=self._headers)
         if r.status_code != 200:
-            _LOGGER.error("Error while sending API call 'post news': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'post news': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'post news' complete")
+            LOGGER.info("Success, API call 'post news' complete")
         return r
 
 
@@ -167,9 +166,9 @@ class PublicAPI(object):
         self._url = "https://connectapi.feuersoftware.com/interfaces/public/news/{0}".format(id)
         r = requests.delete(self._url, headers=self._headers)
         if r.status_code != 204:
-            _LOGGER.error("Error while sending API call 'delete news': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'delete news': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'delete news' complete")
+            LOGGER.info("Success, API call 'delete news' complete")
         return r
 
 
@@ -182,12 +181,12 @@ class PublicAPI(object):
             if k in valid_args:
                 data[k] = v
             else:
-                _LOGGER.warning("Invalid argument passed to put_news: {0}={1}".format(k, v))
+                LOGGER.warning("Invalid argument passed to put_news: {0}={1}".format(k, v))
         r = requests.put(self._url, data=json.dumps(data), headers=self._headers)
         if r.status_code != 200:
-            _LOGGER.error("Error while sending API call 'put news': {0} {1}".format(r.status_code, r.text))
+            LOGGER.error("Error while sending API call 'put news': {0} {1}".format(r.status_code, r.text))
         else:
-            _LOGGER.info("Success, API call 'put news' complete")
+            LOGGER.info("Success, API call 'put news' complete")
         return r
 
 
