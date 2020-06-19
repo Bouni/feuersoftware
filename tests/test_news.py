@@ -55,7 +55,7 @@ def test_minimal_post_news(mock_requests, mock_info):
         start="2019-06-01T12:00:00",
         end="2019-06-01T18:00:00")
     mock_requests.post.assert_called_once_with(
-        f"https://connectapi.feuersoftware.com/interfaces/public/news",
+        f"https://connectapi.feuersoftware.com/interfaces/public/news?newsType=siteNews",
         data='{"title": "Test Title", "content": "Test Content", "start": "2019-06-01T12:00:00", "end": "2019-06-01T18:00:00"}',
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",
@@ -77,7 +77,7 @@ def test_full_post_news(mock_requests, mock_info):
         mailinglists=["Kommando-ML","Ausbilder-ML"],
         site="Gerätehaus")
     mock_requests.post.assert_called_once_with(
-        f"https://connectapi.feuersoftware.com/interfaces/public/news",
+        f"https://connectapi.feuersoftware.com/interfaces/public/news?newsType=siteNews",
         data='{'
              '"title": "Test Title", '
              '"content": "Test Content", '
@@ -107,7 +107,7 @@ def test_invalid_arg_post_news(mock_requests, mock_warning, mock_info):
         invalid_arg="invalid")
     mock_warning.assert_called_with('Invalid argument passed to post_news: invalid_arg=invalid')
     mock_requests.post.assert_called_once_with(
-        f"https://connectapi.feuersoftware.com/interfaces/public/news",
+        f"https://connectapi.feuersoftware.com/interfaces/public/news?newsType=siteNews",
         data='{"title": "Test Title", "content": "Test Content", "start": "2019-06-01T12:00:00", "end": "2019-06-01T18:00:00"}',
         headers={"authorization": f"bearer {TOKEN}",
         "accept": "application/json",

@@ -112,6 +112,7 @@ api.post_news(
     content="An alle, bitte bechten dass ...",
     start="2019-06-06T18:00:00",
     end="2019-06-06T18:00:00",
+    news_type="siteNews",
     groups=[
         "Gruppenführer",
         "Gerätewarte"
