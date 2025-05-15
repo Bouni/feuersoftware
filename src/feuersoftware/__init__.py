@@ -1,3 +1,3 @@
-from feuersoftware.api import Feuersoftware
+from feuersoftware.api import FeuersoftwareAPI
 
-__all__ = ["Feuersoftware"]
+__all__ = ["FeuersoftwareAPI"]
