@@ -27,7 +27,7 @@ class FeuersoftwareAPI(object):
         frame = inspect.currentframe()
         return frame.f_back.f_code.co_name if frame and frame.f_back else default
 
-    def _get(self, url):
+    def _get(self, url: str):
         r = requests.get(url, headers=self._headers)
         if not r.ok:
             LOGGER.error(f"GET '{url}' failed: {r.status_code} - {r.text}")
@@ -35,24 +35,23 @@ class FeuersoftwareAPI(object):
             LOGGER.info(f"GET '{url}' success: {r.status_code} - {r.text}")
         return r
 
-    def _post(self, url, data):
-        print(data)
-        r = requests.post(url, headers=self._headers, data=json.dumps(data))
+    def _post(self, url: str, data: str):
+        r = requests.post(url, headers=self._headers, data=data)
         if not r.ok:
             LOGGER.error(f"POST '{url}' failed: {r.status_code} - {r.text}")
         else:
             LOGGER.info(f"POST '{url}' success: {r.status_code} - {r.text}")
         return r
 
-    def _put(self, url, data):
-        r = requests.put(url, headers=self._headers, data=json.dumps(data))
+    def _put(self, url: str, data: str):
+        r = requests.put(url, headers=self._headers, data=data)
         if not r.ok:
             LOGGER.error(f"PUT '{url}' failed: {r.status_code} - {r.text}")
         else:
             LOGGER.info(f"PUT '{url}' success: {r.status_code} - {r.text}")
         return r
 
-    def _delete(self, url):
+    def _delete(self, url: str):
         r = requests.delete(url, headers=self._headers)
         if not r.ok:
             LOGGER.error(f"DELETE '{url}' failed: {r.status_code} - {r.text}")
@@ -209,7 +208,7 @@ class FeuersoftwareAPI(object):
     ):
         url = f"{BASE_URL}/operation?updateStrategy={update_strategy}"
         _data = CreateOperationModel(**data)
-        return self._post(url, _data.model_dump())
+        return self._post(url, _data.model_dump_json())
 
     def get_operation_message(self, id: str):
         url = f"{BASE_URL}/operation/{id}/message"
@@ -305,7 +304,7 @@ class FeuersoftwareAPI(object):
     def post_vehicle_status(self, id: int | str, data: dict):
         url = f"{BASE_URL}/vehicle/{id}/status"
         _data = SetVehicleStatusModel(**data)
-        return self._post(url, _data.model_dump())
+        return self._post(url, _data.model_dump_json())
 
     def get_vehicle_status(self, id: int | str):
         url = f"{BASE_URL}/vehicle/{id}/status"
@@ -360,3 +359,4 @@ class FeuersoftwareAPI(object):
     ):
         url = f"{BASE_URL}/wasserkarte/active?lat={lat}&lng={lng}&range={range}&numItems={numItems}"
         return self._get(url)
+
