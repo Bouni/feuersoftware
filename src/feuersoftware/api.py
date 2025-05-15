@@ -4,7 +4,7 @@ import logging
 from typing import Literal
 
 import requests
-from models import CreateOperationModel, SetVehicleStatusModel
+from .models import CreateOperationModel, SetVehicleStatusModel
 
 LOGGER = logging.getLogger("Feuersoftware")
 BASE_URL = "https://connectapi.feuersoftware.com/interfaces/public"
