@@ -1,0 +1,28 @@
+[project]
+name = "feuersoftware"
+version = "0.2.0"
+description = "Ein Python Modul um die Öffentliche Feuersoftware API."
+authors = [{name = "bouni", email = "bouni-github@owee.de"}]
+license-files = ["LICENSE*"]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.9.2",
+    "requests>=2.32.3",
+]
+
+[dependency-groups]
+dev = [
+    "logassert>=7",
+    "pytest>=8.3.3",
+    "requests-mock>=1.12.1",
+    "ruff>=0.7.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/Bouni/feuersoftware"
+Repository = "https://github.com/Bouni/feuersoftware.git"
+Issues = "https://github.com/Bouni/feuersoftware/issues"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
