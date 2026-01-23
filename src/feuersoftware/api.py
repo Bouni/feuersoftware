@@ -1,9 +1,9 @@
 import inspect
-import json
 import logging
 from typing import Literal
 
 import requests
+
 from .models import CreateOperationModel, SetVehicleStatusModel
 
 LOGGER = logging.getLogger("Feuersoftware")
@@ -359,4 +359,3 @@ class FeuersoftwareAPI(object):
     ):
         url = f"{BASE_URL}/wasserkarte/active?lat={lat}&lng={lng}&range={range}&numItems={numItems}"
         return self._get(url)
-
