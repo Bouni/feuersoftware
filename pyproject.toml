@@ -1,6 +1,6 @@
 [project]
 name = "feuersoftware"
-version = "0.2.4"
+version = "0.2.5"
 description = "Ein Python Modul um die Öffentliche Feuersoftware API."
 authors = [{name = "bouni", email = "bouni-github@owee.de"}]
 license-files = ["LICENSE*"]
