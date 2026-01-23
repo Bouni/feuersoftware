@@ -115,11 +115,11 @@ wheels = [
 
 [[package]]
 name = "logassert"
-version = "8.4"
+version = "8.6"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4a/7a/6b914acacae99fd33ed7972913271469a1401841c0fd62de6e2de743ef33/logassert-8.4.tar.gz", hash = "sha256:50ea41b3f1218517a74596249e920c994027c5d930bd11c465b1ca9295d40455", size = 21554, upload-time = "2025-05-15T13:45:28.401Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/92/478b104834bfbb1cb69180882ada8f3a8853f5fa53d84c972338b2b6a60a/logassert-8.6.tar.gz", hash = "sha256:6fcbef322a1b8d2496042c394e1f3eb31826bb53d5c1a92252849c74ed1d6d9b", size = 22070, upload-time = "2025-08-14T17:12:52.243Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e9/80/2011368d05667390be605da81a30d6f46f3884e151aadf327650bf5a22c6/logassert-8.4-py3-none-any.whl", hash = "sha256:8c5db1603c5957874733df991bd6c51de23a1a458d4406f86b82b94d05404017", size = 18104, upload-time = "2025-05-15T13:45:26.208Z" },
+    { url = "https://files.pythonhosted.org/packages/44/c6/2f1c303a0995d89e8e95c297e84656d2fd8af84ed40551a2c93542dffc82/logassert-8.6-py3-none-any.whl", hash = "sha256:b3d276fe4995edeccce5457b249ecd60b393dd072d42fdc955d90da532c4e854", size = 18621, upload-time = "2025-08-14T17:12:50.703Z" },
 ]
 
 [[package]]
