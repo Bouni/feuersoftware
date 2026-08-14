@@ -15,7 +15,7 @@ class APIEndpointNotImplementedError(NotImplementedError):
         super().__init__(f"API endpoint '{endpoint}' ({url}) is not implemented.")
 
 
-class FeuersoftwareAPI(object):
+class FeuersoftwareAPI:
     def __init__(self, token: str):
         self._headers = {
             "authorization": f"bearer {token}",
