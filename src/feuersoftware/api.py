@@ -82,6 +82,7 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/alarmgroup"
         return self._get(url)
 
+    @not_implemented
     def put_alarmgroup(self, id: int):
         return f"{BASE_URL}/alarmgroup/{id}"
 
