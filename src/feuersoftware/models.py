@@ -7,7 +7,7 @@ class AddressModel(BaseModel):
     Street: str | None = Field(default=None, max_length=255)
     HouseNumber: str | None = Field(default=None, max_length=255)
     ZipCode: str | None = Field(default=None, max_length=255)
-    City: str = Field(..., min_length=1, max_length=255)
+    City: str | None = Field(default=None, min_length=1, max_length=255)
     District: str | None = Field(default=None, max_length=255)
 
 
