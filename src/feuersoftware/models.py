@@ -48,15 +48,8 @@ class AssignedVehicleModel(BaseModel):
 
 
 class CreateOperationModel(BaseModel):
-    @field_validator("Status")
-    def check_status(cls, v: int) -> int:
-        if v is not None and v not in {0, 1, 2, 3}:
-            raise ValueError("Status must be one of [0, 1, 2, 3]")
-        return v
-
     Start: datetime  # required
     Keyword: str = Field(..., min_length=1, max_length=255)  # required
-
     End: datetime | None = None
     Status: int | None = None
     AlarmEnabled: bool | None = None
@@ -70,6 +63,13 @@ class CreateOperationModel(BaseModel):
     Properties: list[PropertyModel] | None = None
     AlarmedVehicles: list[AlarmedVehicleModel] | None = None
     AssignedVehicles: list[AssignedVehicleModel] | None = None
+
+    @field_validator("Status")
+    @classmethod
+    def check_status(cls, v: int) -> int:
+        if v is not None and v not in {0, 1, 2, 3}:
+            raise ValueError("Status must be one of [0, 1, 2, 3]")
+        return v
 
 
 class SetVehicleStatusModel(BaseModel):
