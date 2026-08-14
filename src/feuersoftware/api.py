@@ -1,4 +1,4 @@
-import inspect
+import functools
 import logging
 from typing import Literal
 
@@ -9,10 +9,21 @@ from .models import CreateOperationModel, SetVehicleStatusModel
 LOGGER = logging.getLogger("Feuersoftware")
 BASE_URL = "https://connectapi.feuersoftware.com/interfaces/public"
 
+DEFAULT_TIMEOUT = 10
+
 
 class APIEndpointNotImplementedError(NotImplementedError):
     def __init__(self, endpoint: str, url: str):
         super().__init__(f"API endpoint '{endpoint}' ({url}) is not implemented.")
+
+
+def not_implemented(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        url = func(self, *args, **kwargs)
+        raise APIEndpointNotImplementedError(func.__name__, url)
+
+    return wrapper
 
 
 class FeuersoftwareAPI:
@@ -23,41 +34,45 @@ class FeuersoftwareAPI:
             "content-type": "application/json",
         }
 
-    def _get_current_method_name(self, default="unknown"):
-        frame = inspect.currentframe()
-        return frame.f_back.f_code.co_name if frame and frame.f_back else default
+    def _request(
+        self,
+        method: str,
+        url: str,
+        data: str | None = None,
+        params: dict | None = None,
+    ) -> requests.Response | None:
+        try:
+            r = requests.request(
+                method,
+                url,
+                headers=self._headers,
+                data=data,
+                params=params,
+                timeout=DEFAULT_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as err:
+            LOGGER.error(f"{method} '{url}' failed: {err}")
+            return None
 
-    def _get(self, url: str):
-        r = requests.get(url, headers=self._headers)
+        body_preview = r.text[:500]
         if not r.ok:
-            LOGGER.error(f"GET '{url}' failed: {r.status_code} - {r.text}")
+            LOGGER.error(f"{method} '{url}' failed: {r.status_code} - {body_preview}")
         else:
-            LOGGER.info(f"GET '{url}' success: {r.status_code} - {r.text}")
+            LOGGER.info(f"{method} '{url}' success: {r.status_code}")
+            LOGGER.debug(f"{method} '{url}' response body: {body_preview}")
         return r
 
-    def _post(self, url: str, data: str):
-        r = requests.post(url, headers=self._headers, data=data)
-        if not r.ok:
-            LOGGER.error(f"POST '{url}' failed: {r.status_code} - {r.text}")
-        else:
-            LOGGER.info(f"POST '{url}' success: {r.status_code} - {r.text}")
-        return r
+    def _get(self, url: str, params: dict | None = None):
+        return self._request("GET", url, params=params)
 
-    def _put(self, url: str, data: str):
-        r = requests.put(url, headers=self._headers, data=data)
-        if not r.ok:
-            LOGGER.error(f"PUT '{url}' failed: {r.status_code} - {r.text}")
-        else:
-            LOGGER.info(f"PUT '{url}' success: {r.status_code} - {r.text}")
-        return r
+    def _post(self, url: str, data: str, params: dict | None = None):
+        return self._request("POST", url, data=data, params=params)
 
-    def _delete(self, url: str):
-        r = requests.delete(url, headers=self._headers)
-        if not r.ok:
-            LOGGER.error(f"DELETE '{url}' failed: {r.status_code} - {r.text}")
-        else:
-            LOGGER.info(f"DELETE '{url}' success: {r.status_code} - {r.text}")
-        return r
+    def _put(self, url: str, data: str, params: dict | None = None):
+        return self._request("PUT", url, data=data, params=params)
+
+    def _delete(self, url: str, params: dict | None = None):
+        return self._request("DELETE", url, params=params)
 
     # ========================================================================
     # ALARMGROUP
@@ -68,8 +83,7 @@ class FeuersoftwareAPI:
         return self._get(url)
 
     def put_alarmgroup(self, id: int):
-        url = f"{BASE_URL}/alarmgroup/{id}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/alarmgroup/{id}"
 
     # ========================================================================
     # BILLING
@@ -87,9 +101,9 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/defectReport"
         return self._get(url)
 
+    @not_implemented
     def post_defect_report(self, data: dict):
-        url = f"{BASE_URL}/defectReport"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReport"
 
     def get_defect_report_history(self, id: int):
         url = f"{BASE_URL}/defectReport/{id}/statusHistory"
@@ -99,60 +113,60 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/defectReport/{id}"
         return self._get(url)
 
+    @not_implemented
     def put_defect_report(self, id: int, data: dict):
-        url = f"{BASE_URL}/defectReport/{id}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReport/{id}"
 
     def delete_defect_report(self, id: int):
         url = f"{BASE_URL}/defectReport/{id}"
         return self._delete(url)
 
+    @not_implemented
     def post_defect_report_attachment(self, id: int, data: dict):
-        url = f"{BASE_URL}/defectReport/{id}/attach"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReport/{id}/attach"
 
+    @not_implemented
     def put_defect_report_attachment_attach(self, id: int, attachmentId: int):
-        url = f"{BASE_URL}/defectReport/{id}/attach/{attachmentId}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReport/{id}/attach/{attachmentId}"
 
     def delete_defect_report_attachment(self, attachmentId: int):
         url = f"{BASE_URL}/defectReport/attach/{attachmentId}"
         return self._delete(url)
 
+    @not_implemented
     def put_defect_report_attachment(self, attachmentId: int):
-        url = f"{BASE_URL}/defectReport/attach/{attachmentId}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReport/attach/{attachmentId}"
 
+    @not_implemented
     def get_defect_report_attachment(self, attachmentId: int):
-        url = f"{BASE_URL}/defectReport/attach/{attachmentId}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReport/attach/{attachmentId}"
 
+    @not_implemented
     def get_defect_report_attachment_url(self, attachmentId: int):
-        url = f"{BASE_URL}/defectReport/attach/url/{attachmentId}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReport/attach/url/{attachmentId}"
 
+    @not_implemented
     def get_defect_report_attachment_abuse(self, attachmentId: int):
-        url = f"{BASE_URL}/defectReport/attachabuse/{attachmentId}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReport/attachabuse/{attachmentId}"
 
     # ========================================================================
     # DEFECT REPORT CATEGORY
     # ========================================================================
 
     def get_defect_report_categories(self):
-        url = f"{BASE_URL}/defectReportCaregory"
+        url = f"{BASE_URL}/defectReportCategory"
         return self._get(url)
 
+    @not_implemented
     def post_defect_report_category(self, data: dict):
-        url = f"{BASE_URL}/defectReportCaregory"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReportCategory"
 
+    @not_implemented
     def put_defect_report_category(self, id: int, data: dict):
-        url = f"{BASE_URL}/defectReportCaregory/{id}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/defectReportCategory/{id}"
 
     def delete_defect_report_category(self, id: int):
-        url = f"{BASE_URL}/defectReportCaregory/{id}"
+        url = f"{BASE_URL}/defectReportCategory/{id}"
         return self._delete(url)
 
     # ========================================================================
@@ -168,8 +182,8 @@ class FeuersoftwareAPI:
     # ========================================================================
 
     def get_geocoding(self, address: str):
-        url = f"{BASE_URL}/geocoding?address={address}"
-        return self._get(url)
+        url = f"{BASE_URL}/geocoding"
+        return self._get(url, params={"address": address})
 
     # ========================================================================
     # NEWS
@@ -179,13 +193,13 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/news"
         return self._get(url)
 
+    @not_implemented
     def post_news(self, data: dict):
-        url = f"{BASE_URL}/news"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/news"
 
+    @not_implemented
     def put_news(self, id: int, data: dict):
-        url = f"{BASE_URL}/news/{id}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/news/{id}"
 
     def delete_news(self, id: int):
         url = f"{BASE_URL}/news/{id}"
@@ -206,33 +220,35 @@ class FeuersoftwareAPI:
             "none", "byNumber", "byAddress", "byPosition"
         ] = "none",
     ):
-        url = f"{BASE_URL}/operation?updateStrategy={update_strategy}"
+        url = f"{BASE_URL}/operation"
         _data = CreateOperationModel(**data)
-        return self._post(url, _data.model_dump_json())
+        return self._post(
+            url, _data.model_dump_json(), params={"updateStrategy": update_strategy}
+        )
 
     def get_operation_message(self, id: str):
         url = f"{BASE_URL}/operation/{id}/message"
         return self._get(url)
 
+    @not_implemented
     def post_operation_message(self, id: str, data: dict):
-        url = f"{BASE_URL}/operation/{id}/message"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/operation/{id}/message"
 
     def get_operation_assignment(self, id: str):
         url = f"{BASE_URL}/operation/{id}/assignment"
         return self._get(url)
 
+    @not_implemented
     def post_operation_assignment(self, id: str, data: dict):
-        url = f"{BASE_URL}/operation/{id}/assignment"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/operation/{id}/assignment"
 
     def get_operation_user_status(self, id: str):
         url = f"{BASE_URL}/operation/{id}/userstatus"
         return self._get(url)
 
+    @not_implemented
     def post_operation_user_status(self, data: dict):
-        url = f"{BASE_URL}/operation/userstatus"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/operation/userstatus"
 
     # ========================================================================
     # ORGANIZATION
@@ -254,29 +270,32 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/user/{id}"
         return self._get(url)
 
+    @not_implemented
     def put_user(self, id: int, data: dict):
-        url = f"{BASE_URL}/user/{id}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/user/{id}"
 
     def delete_user(self, id: int):
         url = f"{BASE_URL}/user/{id}"
         return self._delete(url)
 
+    @not_implemented
     def post_user_invite(self, data: dict):
-        url = f"{BASE_URL}/user"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/user"
 
+    @not_implemented
     def put_user_availability(self, id: int, data: dict):
-        url = f"{BASE_URL}/user/{id}/availability/current"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/user/{id}/availability/current"
 
     # ========================================================================
     # USER API
     # ========================================================================
 
     def get_user_availablity(self, token: str, status: int, lifeTimeDays: int):
-        url = f"{BASE_URL}/user/useravailability?token={token}&status={status}&lifeTimeDays={lifeTimeDays}"
-        return self._get(url)
+        url = f"{BASE_URL}/user/useravailability"
+        return self._get(
+            url,
+            params={"token": token, "status": status, "lifeTimeDays": lifeTimeDays},
+        )
 
     def get_user_status(
         self,
@@ -286,8 +305,17 @@ class FeuersoftwareAPI:
         driveDistanceMeters: int,
         siteId: int,
     ):
-        url = f"{BASE_URL}/user/useravailability?token={token}&status={status}&driveTimeSeconds={driveTimeSeconds}&driveDistanceMeters={driveDistanceMeters}&siteId={siteId}"
-        return self._get(url)
+        url = f"{BASE_URL}/user/useravailability"
+        return self._get(
+            url,
+            params={
+                "token": token,
+                "status": status,
+                "driveTimeSeconds": driveTimeSeconds,
+                "driveDistanceMeters": driveDistanceMeters,
+                "siteId": siteId,
+            },
+        )
 
     # ========================================================================
     # VEHICLE
@@ -318,21 +346,21 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/vehicle/{id}/cvm"
         return self._get(url)
 
+    @not_implemented
     def post_vehicle_cvm(self, id: int, data: dict):
-        url = f"{BASE_URL}/vehicle/{id}/cvm"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/vehicle/{id}/cvm"
 
     def get_vehicle_cvm(self, id: int, cvm_id: int):
         url = f"{BASE_URL}/vehicle/{id}/cvm/{cvm_id}"
         return self._get(url)
 
+    @not_implemented
     def put_vehicle_cvm(self, id: int, cvm_id: int, data: dict):
-        url = f"{BASE_URL}/vehicle/{id}/cvm/{cvm_id}"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/vehicle/{id}/cvm/{cvm_id}"
 
     def delete_vehicle_cvm(self, id: int, cvm_id: int):
         url = f"{BASE_URL}/vehicle/{id}/cvm/{cvm_id}"
-        return self._get(url)
+        return self._delete(url)
 
     # ========================================================================
     # VEHICLE PROPERTIES
@@ -342,9 +370,9 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/vehicle/{id}/properties"
         return self._get(url)
 
+    @not_implemented
     def post_vehicle_properties(self, id: int, data: dict):
-        url = f"{BASE_URL}/vehicle/{id}/properties"
-        raise APIEndpointNotImplementedError(self._get_current_method_name(), url)
+        return f"{BASE_URL}/vehicle/{id}/properties"
 
     # ========================================================================
     # WASSERKARTE
@@ -357,5 +385,8 @@ class FeuersoftwareAPI:
     def get_wasserkarte_hydrants(
         self, lat: float, lng: float, range: float, numItems: int
     ):
-        url = f"{BASE_URL}/wasserkarte/active?lat={lat}&lng={lng}&range={range}&numItems={numItems}"
-        return self._get(url)
+        url = f"{BASE_URL}/wasserkarte/active"
+        return self._get(
+            url,
+            params={"lat": lat, "lng": lng, "range": range, "numItems": numItems},
+        )
