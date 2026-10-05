@@ -223,6 +223,54 @@ def test_get_wasserkarte_active(api, requests_mock):
     assert result.ok
 
 
+def test_get_operations_sends_no_query_params_by_default(api, base_url, requests_mock):
+    requests_mock.get(f"{base_url}/operation", status_code=200, json=[])
+
+    api.get_operations()
+
+    assert requests_mock.last_request.qs == {}
+
+
+def test_get_operations_query_params(api, base_url, requests_mock):
+    requests_mock.get(f"{base_url}/operation", status_code=200, json=[])
+
+    api.get_operations(
+        only_latest=False,
+        filter="Keyword eq 'B3'",
+        orderby="Start desc",
+        top=100,
+        skip=200,
+    )
+
+    qs = requests_mock.last_request.qs
+    assert qs["onlylatest"] == ["false"]
+    assert qs["$filter"] == ["keyword eq 'b3'"]  # requests_mock lowercases qs
+    assert qs["$orderby"] == ["start desc"]
+    assert qs["$top"] == ["100"]
+    assert qs["$skip"] == ["200"]
+
+
+@pytest.mark.parametrize(
+    "method_name, args, http_method, path",
+    [
+        ("get_vehicle_image", (9,), "GET", "/vehicle/9/image"),
+        ("get_vehicle_status", (9,), "GET", "/vehicle/9/status"),
+        ("post_vehicle_status", (9, {"Status": 2}), "POST", "/vehicle/9/status"),
+    ],
+)
+def test_vehicle_identifier_preference(
+    api, base_url, requests_mock, method_name, args, http_method, path
+):
+    requests_mock.register_uri(http_method, f"{base_url}{path}", status_code=200)
+    method = getattr(api, method_name)
+
+    method(*args)
+    assert "identifierpreference" not in requests_mock.last_request.qs
+
+    method(*args, identifier_preference="PreferRadioId")
+    assert requests_mock.last_request.qs["identifierpreference"] == ["preferradioid"]
+
+
 def test_post_operation_sends_update_strategy_as_query_param(
     api, base_url, requests_mock
 ):

@@ -19,6 +19,11 @@ class APIEndpointNotImplementedError(NotImplementedError):
         super().__init__(f"API endpoint '{endpoint}' ({url}) is not implemented.")
 
 
+def _drop_none(params: dict) -> dict | None:
+    params = {k: v for k, v in params.items() if v is not None}
+    return params or None
+
+
 def not_implemented(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -212,9 +217,28 @@ class FeuersoftwareAPI:
     # OPERATION
     # ========================================================================
 
-    def get_operations(self):
+    def get_operations(
+        self,
+        only_latest: bool | None = None,
+        filter: str | None = None,
+        orderby: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ):
+        """
+        only_latest defaults to True on the server side (last 4 hours only),
+        pass False to get the operation history. The server returns at most
+        100 items per request, use top/skip (OData) to page through them.
+        """
         url = f"{BASE_URL}/operation"
-        return self._get(url)
+        params = {
+            "onlyLatest": None if only_latest is None else str(only_latest).lower(),
+            "$filter": filter,
+            "$orderby": orderby,
+            "$top": top,
+            "$skip": skip,
+        }
+        return self._get(url, params=_drop_none(params))
 
     def post_operation(
         self,
@@ -328,18 +352,31 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/vehicle"
         return self._get(url)
 
-    def get_vehicle_image(self, id: int | str):
-        url = f"{BASE_URL}/vehicle/{id}/image"
-        return self._get(url)
+    # id can be either the vehicle id or the radio id. The server resolves
+    # it according to identifier_preference, which defaults to
+    # "PreferRadioId" on the server side.
 
-    def post_vehicle_status(self, id: int | str, data: dict):
+    def get_vehicle_image(
+        self, id: int | str, identifier_preference: str | None = None
+    ):
+        url = f"{BASE_URL}/vehicle/{id}/image"
+        params = {"identifierPreference": identifier_preference}
+        return self._get(url, params=_drop_none(params))
+
+    def post_vehicle_status(
+        self, id: int | str, data: dict, identifier_preference: str | None = None
+    ):
         url = f"{BASE_URL}/vehicle/{id}/status"
         _data = SetVehicleStatusModel(**data)
-        return self._post(url, _data.model_dump_json())
+        params = {"identifierPreference": identifier_preference}
+        return self._post(url, _data.model_dump_json(), params=_drop_none(params))
 
-    def get_vehicle_status(self, id: int | str):
+    def get_vehicle_status(
+        self, id: int | str, identifier_preference: str | None = None
+    ):
         url = f"{BASE_URL}/vehicle/{id}/status"
-        return self._get(url)
+        params = {"identifierPreference": identifier_preference}
+        return self._get(url, params=_drop_none(params))
 
     # ========================================================================
     # VEHICLE CVM MODULE
