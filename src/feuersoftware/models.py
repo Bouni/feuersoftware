@@ -45,6 +45,7 @@ class AssignedVehicleModel(BaseModel):
     Status4: datetime | None = None
     Status7: datetime | None = None
     Status8: datetime | None = None
+    Source: str | None = None
 
 
 class CreateOperationModel(BaseModel):
@@ -52,11 +53,12 @@ class CreateOperationModel(BaseModel):
     Keyword: str = Field(..., min_length=1, max_length=255)  # required
     End: datetime | None = None
     Status: int | None = None
+    Priority: int | None = None
     AlarmEnabled: bool | None = None
     Address: AddressModel | None = None
     Reporter: ReporterModel | None = None
     Position: PositionModel | None = None
-    Facts: str | None = Field(default=None, max_length=255)
+    Facts: str | None = Field(default=None, max_length=2000)
     Ric: str | None = Field(default=None, max_length=4000)
     Number: str | None = Field(default=None, max_length=255)
     Source: str | None = Field(default=None, max_length=255)
@@ -69,6 +71,13 @@ class CreateOperationModel(BaseModel):
     def check_status(cls, v: int) -> int:
         if v is not None and v not in {0, 1, 2, 3}:
             raise ValueError("Status must be one of [0, 1, 2, 3]")
+        return v
+
+    @field_validator("Priority")
+    @classmethod
+    def check_priority(cls, v: int) -> int:
+        if v is not None and v not in {0, 1, 2, 3}:
+            raise ValueError("Priority must be one of [0, 1, 2, 3]")
         return v
 
 

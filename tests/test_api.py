@@ -19,6 +19,7 @@ from pydantic import ValidationError
 
 from feuersoftware.api import (
     DEFAULT_TIMEOUT,
+    WASSERKARTE_URL,
     APIEndpointNotImplementedError,
 )
 
@@ -179,7 +180,7 @@ def test_get_user_availablity_query_params(api, base_url, requests_mock):
 
 
 def test_get_user_status_query_params(api, base_url, requests_mock):
-    url = f"{base_url}/user/useravailability"
+    url = f"{base_url}/user/userstatus"
     requests_mock.get(url, status_code=200, json={})
 
     api.get_user_status(
@@ -198,8 +199,8 @@ def test_get_user_status_query_params(api, base_url, requests_mock):
     assert qs["siteid"] == ["3"]
 
 
-def test_get_wasserkarte_hydrants_query_params(api, base_url, requests_mock):
-    url = f"{base_url}/wasserkarte/active"
+def test_get_wasserkarte_hydrants_query_params(api, requests_mock):
+    url = f"{WASSERKARTE_URL}/hydrant"
     requests_mock.get(url, status_code=200, json={})
 
     api.get_wasserkarte_hydrants(lat=47.5990, lng=8.3348, range=300, numItems=5)
@@ -209,6 +210,17 @@ def test_get_wasserkarte_hydrants_query_params(api, base_url, requests_mock):
     assert qs["lng"] == ["8.3348"]
     assert qs["range"] == ["300"]
     assert qs["numitems"] == ["5"]
+
+
+def test_get_wasserkarte_active(api, requests_mock):
+    # Wasserkarte lives under /interfaces/wasserkarte, not /interfaces/public
+    assert WASSERKARTE_URL.endswith("/interfaces/wasserkarte")
+    requests_mock.get(f"{WASSERKARTE_URL}/active", status_code=200, json={})
+
+    result = api.get_wasserkarte_active()
+
+    assert result is not None
+    assert result.ok
 
 
 def test_post_operation_sends_update_strategy_as_query_param(
@@ -302,7 +314,7 @@ NOT_IMPLEMENTED_CALLS = [
     ("put_defect_report_attachment", (1,)),
     ("get_defect_report_attachment", (1,)),
     ("get_defect_report_attachment_url", (1,)),
-    ("get_defect_report_attachment_abuse", (1,)),
+    ("put_defect_report_attachment_abuse", (1,)),
     ("post_defect_report_category", ({},)),
     ("put_defect_report_category", (1, {})),
     ("post_news", ({},)),
@@ -349,6 +361,13 @@ def test_not_implemented_error_message_includes_url(api):
     assert "/alarmgroup/5" in message
 
 
+def test_post_user_invite_stub_url(api):
+    with pytest.raises(APIEndpointNotImplementedError) as exc_info:
+        api.post_user_invite({})
+
+    assert "/user/invite" in str(exc_info.value)
+
+
 # ============================================================================
 # Plain GET endpoints (parametrized: build URL, call self._get)
 # ============================================================================
@@ -371,12 +390,11 @@ SIMPLE_GET_CALLS = [
     ("get_users", (), "/user"),
     ("get_user", (3,), "/user/3"),
     ("get_vehicles", (), "/vehicle"),
-    ("get_vehicle_image", (9,), "/vehicle/9"),
+    ("get_vehicle_image", (9,), "/vehicle/9/image"),
     ("get_vehicle_status", (9,), "/vehicle/9/status"),
     ("get_vehicle_cvms", (9,), "/vehicle/9/cvm"),
     ("get_vehicle_cvm", (9, 2), "/vehicle/9/cvm/2"),
     ("get_vehicle_properties", (9,), "/vehicle/9/properties"),
-    ("get_wasserkarte_active", (), "/wasserkarte/active"),
 ]
 
 

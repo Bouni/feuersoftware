@@ -7,7 +7,9 @@ import requests
 from .models import CreateOperationModel, SetVehicleStatusModel
 
 LOGGER = logging.getLogger("Feuersoftware")
-BASE_URL = "https://connectapi.feuersoftware.com/interfaces/public"
+ROOT_URL = "https://connectapi.feuersoftware.com/interfaces"
+BASE_URL = f"{ROOT_URL}/public"
+WASSERKARTE_URL = f"{ROOT_URL}/wasserkarte"
 
 DEFAULT_TIMEOUT = 10
 
@@ -147,7 +149,7 @@ class FeuersoftwareAPI:
         return f"{BASE_URL}/defectReport/attach/url/{attachmentId}"
 
     @not_implemented
-    def get_defect_report_attachment_abuse(self, attachmentId: int):
+    def put_defect_report_attachment_abuse(self, attachmentId: int):
         return f"{BASE_URL}/defectReport/attachabuse/{attachmentId}"
 
     # ========================================================================
@@ -281,7 +283,7 @@ class FeuersoftwareAPI:
 
     @not_implemented
     def post_user_invite(self, data: dict):
-        return f"{BASE_URL}/user"
+        return f"{BASE_URL}/user/invite"
 
     @not_implemented
     def put_user_availability(self, id: int, data: dict):
@@ -306,7 +308,7 @@ class FeuersoftwareAPI:
         driveDistanceMeters: int,
         siteId: int,
     ):
-        url = f"{BASE_URL}/user/useravailability"
+        url = f"{BASE_URL}/user/userstatus"
         return self._get(
             url,
             params={
@@ -327,7 +329,7 @@ class FeuersoftwareAPI:
         return self._get(url)
 
     def get_vehicle_image(self, id: int | str):
-        url = f"{BASE_URL}/vehicle/{id}"
+        url = f"{BASE_URL}/vehicle/{id}/image"
         return self._get(url)
 
     def post_vehicle_status(self, id: int | str, data: dict):
@@ -380,13 +382,13 @@ class FeuersoftwareAPI:
     # ========================================================================
 
     def get_wasserkarte_active(self):
-        url = f"{BASE_URL}/wasserkarte/active"
+        url = f"{WASSERKARTE_URL}/active"
         return self._get(url)
 
     def get_wasserkarte_hydrants(
         self, lat: float, lng: float, range: float, numItems: int
     ):
-        url = f"{BASE_URL}/wasserkarte/active"
+        url = f"{WASSERKARTE_URL}/hydrant"
         return self._get(
             url,
             params={"lat": lat, "lng": lng, "range": range, "numItems": numItems},

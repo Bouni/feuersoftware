@@ -106,7 +106,30 @@ def test_create_operation_model_facts_max_length():
         CreateOperationModel(
             Start="2025-05-15T12:19:48.909Z",
             Keyword="Test",
-            Facts="x" * 256,
+            Facts="x" * 2001,
+        )
+
+
+def test_create_operation_model_facts_accepts_up_to_2000_chars():
+    model = CreateOperationModel(
+        Start="2025-05-15T12:19:48.909Z", Keyword="Test", Facts="x" * 2000
+    )
+    assert len(model.Facts) == 2000
+
+
+@pytest.mark.parametrize("priority", [0, 1, 2, 3])
+def test_create_operation_model_accepts_valid_priority(priority):
+    model = CreateOperationModel(
+        Start="2025-05-15T12:19:48.909Z", Keyword="Test", Priority=priority
+    )
+    assert model.Priority == priority
+
+
+@pytest.mark.parametrize("priority", [-1, 4])
+def test_create_operation_model_rejects_invalid_priority(priority):
+    with pytest.raises(ValidationError):
+        CreateOperationModel(
+            Start="2025-05-15T12:19:48.909Z", Keyword="Test", Priority=priority
         )
 
 
@@ -187,5 +210,6 @@ def test_alarmed_vehicle_model_defaults():
 def test_assigned_vehicle_model_defaults():
     model = AssignedVehicleModel()
     assert model.Name is None
+    assert model.Source is None
     assert model.VehicleId is None
     assert model.Assigned is None
