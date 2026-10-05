@@ -2,9 +2,10 @@
 
 Feuersoftware is a library that allow you to interact with the [Feuersoftware Connect Public API](https://connectapi.feuersoftware.com/swagger/index.html).
 
-> [!IMPORTANT]  
-> A lot of API routes are not yet implemented. 
-> If you need a specific API route, open an issue or submit a Pull request an I try to implement it ASAP.
+All routes of the public API are implemented. Request bodies are passed as
+plain dicts (or lists of dicts) and validated with pydantic before they are
+sent, so invalid data raises a `pydantic.ValidationError` without hitting the API.
+Only the fields you pass are sent.
 
 
 ## Example
@@ -123,5 +124,5 @@ status_data = {
   "Source": "ILS"
 }
 
-api.post_vehicle_status(radioid=12345678, status_data)
+api.post_vehicle_status(12345678, status_data)
 ```
