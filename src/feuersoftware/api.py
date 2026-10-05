@@ -24,6 +24,15 @@ def _drop_none(params: dict) -> dict | None:
     return params or None
 
 
+def _odata_params(
+    filter: str | None = None,
+    orderby: str | None = None,
+    top: int | None = None,
+    skip: int | None = None,
+) -> dict:
+    return {"$filter": filter, "$orderby": orderby, "$top": top, "$skip": skip}
+
+
 def not_implemented(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -92,6 +101,26 @@ class FeuersoftwareAPI:
     @not_implemented
     def put_alarmgroup(self, id: int):
         return f"{BASE_URL}/alarmgroup/{id}"
+
+    # ========================================================================
+    # APPOINTMENT
+    # ========================================================================
+
+    def get_appointments(
+        self,
+        filter: str | None = None,
+        orderby: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ):
+        """
+        Results are sorted by start date ascending, at most 1000 items are
+        returned. To get current and future appointments use
+        filter="End ge YYYY-MM-DD" with today's date.
+        """
+        url = f"{BASE_URL}/appointment"
+        params = _odata_params(filter, orderby, top, skip)
+        return self._get(url, params=_drop_none(params))
 
     # ========================================================================
     # BILLING
@@ -178,6 +207,14 @@ class FeuersoftwareAPI:
         return self._delete(url)
 
     # ========================================================================
+    # DIAGNOSTICS
+    # ========================================================================
+
+    @not_implemented
+    def post_diagnostics_upload_request(self, data: dict):
+        return f"{BASE_URL}/diagnostics/upload-request"
+
+    # ========================================================================
     # FUNCTION
     # ========================================================================
 
@@ -192,6 +229,50 @@ class FeuersoftwareAPI:
     def get_geocoding(self, address: str):
         url = f"{BASE_URL}/geocoding"
         return self._get(url, params={"address": address})
+
+    # ========================================================================
+    # INFOBOARD
+    # ========================================================================
+
+    def get_infoboard(self):
+        url = f"{BASE_URL}/infoboard"
+        return self._get(url)
+
+    @not_implemented
+    def post_infoboard(self, data: dict):
+        return f"{BASE_URL}/infoboard"
+
+    def get_infoboard_info(self, id: int):
+        url = f"{BASE_URL}/infoboard/{id}"
+        return self._get(url)
+
+    @not_implemented
+    def put_infoboard_info(self, id: int, data: dict):
+        return f"{BASE_URL}/infoboard/{id}"
+
+    def delete_infoboard_info(self, id: int):
+        url = f"{BASE_URL}/infoboard/{id}"
+        return self._delete(url)
+
+    def get_infoboard_groups(self):
+        url = f"{BASE_URL}/infoboard/groups"
+        return self._get(url)
+
+    @not_implemented
+    def post_infoboard_group(self, data: dict):
+        return f"{BASE_URL}/infoboard/groups"
+
+    @not_implemented
+    def put_infoboard_group(self, id: int, data: dict):
+        return f"{BASE_URL}/infoboard/groups/{id}"
+
+    # ========================================================================
+    # MAILING LISTS
+    # ========================================================================
+
+    def get_mailinglists(self):
+        url = f"{BASE_URL}/mailinglists"
+        return self._get(url)
 
     # ========================================================================
     # NEWS
@@ -233,10 +314,7 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/operation"
         params = {
             "onlyLatest": None if only_latest is None else str(only_latest).lower(),
-            "$filter": filter,
-            "$orderby": orderby,
-            "$top": top,
-            "$skip": skip,
+            **_odata_params(filter, orderby, top, skip),
         }
         return self._get(url, params=_drop_none(params))
 
@@ -277,6 +355,39 @@ class FeuersoftwareAPI:
     def post_operation_user_status(self, data: dict):
         return f"{BASE_URL}/operation/userstatus"
 
+    def get_operation_documentation(self, id: str):
+        url = f"{BASE_URL}/operation/{id}/documentation"
+        return self._get(url)
+
+    @not_implemented
+    def put_operation_documentation(self, id: str, data: dict):
+        return f"{BASE_URL}/operation/{id}/documentation"
+
+    @not_implemented
+    def put_operation_assignment_crew(self, id: str, vehicle_id: str, data: dict):
+        return f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/crew"
+
+    def get_operation_assignment_users(self, id: str, vehicle_id: str):
+        url = f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/users"
+        return self._get(url)
+
+    @not_implemented
+    def post_operation_assignment_user(self, id: str, vehicle_id: str, data: dict):
+        return f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/users"
+
+    @not_implemented
+    def put_operation_assignment_users(self, id: str, vehicle_id: str, data: list):
+        return f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/users"
+
+    def delete_operation_assignment_user(
+        self, id: str, vehicle_id: str, user_assignment_id: int
+    ):
+        url = (
+            f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}"
+            f"/users/{user_assignment_id}"
+        )
+        return self._delete(url)
+
     # ========================================================================
     # ORGANIZATION
     # ========================================================================
@@ -312,6 +423,14 @@ class FeuersoftwareAPI:
     @not_implemented
     def put_user_availability(self, id: int, data: dict):
         return f"{BASE_URL}/user/{id}/availability/current"
+
+    @not_implemented
+    def patch_user(self, id: int, data: list):
+        return f"{BASE_URL}/user/{id}"
+
+    def get_user_profilepicture(self, id: int | str):
+        url = f"{BASE_URL}/user/{id}/profilepicture"
+        return self._get(url)
 
     # ========================================================================
     # USER API
@@ -377,6 +496,35 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/vehicle/{id}/status"
         params = {"identifierPreference": identifier_preference}
         return self._get(url, params=_drop_none(params))
+
+    # ========================================================================
+    # VEHICLE AVAILABILITY
+    # ========================================================================
+
+    def get_vehicle_availabilities(
+        self,
+        id: int,
+        filter: str | None = None,
+        orderby: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ):
+        """Current and future availabilities, sorted by start date ascending."""
+        url = f"{BASE_URL}/vehicle/{id}/availability"
+        params = _odata_params(filter, orderby, top, skip)
+        return self._get(url, params=_drop_none(params))
+
+    @not_implemented
+    def post_vehicle_availability(self, id: int, data: dict):
+        return f"{BASE_URL}/vehicle/{id}/availability"
+
+    @not_implemented
+    def put_vehicle_availability(self, id: int, availability_id: int, data: dict):
+        return f"{BASE_URL}/vehicle/{id}/availability/{availability_id}"
+
+    def delete_vehicle_availability(self, id: int, availability_id: int):
+        url = f"{BASE_URL}/vehicle/{id}/availability/{availability_id}"
+        return self._delete(url)
 
     # ========================================================================
     # VEHICLE CVM MODULE

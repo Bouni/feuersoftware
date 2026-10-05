@@ -251,6 +251,28 @@ def test_get_operations_query_params(api, base_url, requests_mock):
 
 
 @pytest.mark.parametrize(
+    "method_name, args, path",
+    [
+        ("get_appointments", (), "/appointment"),
+        ("get_vehicle_availabilities", (9,), "/vehicle/9/availability"),
+    ],
+)
+def test_odata_query_params(api, base_url, requests_mock, method_name, args, path):
+    requests_mock.get(f"{base_url}{path}", status_code=200, json=[])
+    method = getattr(api, method_name)
+
+    method(*args)
+    assert requests_mock.last_request.qs == {}
+
+    method(*args, filter="End ge 2026-10-05", orderby="Start", top=10, skip=20)
+    qs = requests_mock.last_request.qs
+    assert qs["$filter"] == ["end ge 2026-10-05"]
+    assert qs["$orderby"] == ["start"]
+    assert qs["$top"] == ["10"]
+    assert qs["$skip"] == ["20"]
+
+
+@pytest.mark.parametrize(
     "method_name, args, http_method, path",
     [
         ("get_vehicle_image", (9,), "GET", "/vehicle/9/image"),
@@ -376,6 +398,18 @@ NOT_IMPLEMENTED_CALLS = [
     ("post_vehicle_cvm", (1, {})),
     ("put_vehicle_cvm", (1, 2, {})),
     ("post_vehicle_properties", (1, {})),
+    ("post_diagnostics_upload_request", ({},)),
+    ("post_infoboard", ({},)),
+    ("put_infoboard_info", (1, {})),
+    ("post_infoboard_group", ({},)),
+    ("put_infoboard_group", (1, {})),
+    ("put_operation_documentation", ("op-1", {})),
+    ("put_operation_assignment_crew", ("op-1", "veh-1", {})),
+    ("post_operation_assignment_user", ("op-1", "veh-1", {})),
+    ("put_operation_assignment_users", ("op-1", "veh-1", [])),
+    ("patch_user", (1, [])),
+    ("post_vehicle_availability", (1, {})),
+    ("put_vehicle_availability", (1, 2, {})),
 ]
 
 
@@ -443,6 +477,19 @@ SIMPLE_GET_CALLS = [
     ("get_vehicle_cvms", (9,), "/vehicle/9/cvm"),
     ("get_vehicle_cvm", (9, 2), "/vehicle/9/cvm/2"),
     ("get_vehicle_properties", (9,), "/vehicle/9/properties"),
+    ("get_appointments", (), "/appointment"),
+    ("get_infoboard", (), "/infoboard"),
+    ("get_infoboard_info", (5,), "/infoboard/5"),
+    ("get_infoboard_groups", (), "/infoboard/groups"),
+    ("get_mailinglists", (), "/mailinglists"),
+    ("get_operation_documentation", ("op-1",), "/operation/op-1/documentation"),
+    (
+        "get_operation_assignment_users",
+        ("op-1", "veh-1"),
+        "/operation/op-1/assignment/veh-1/users",
+    ),
+    ("get_user_profilepicture", (3,), "/user/3/profilepicture"),
+    ("get_vehicle_availabilities", (9,), "/vehicle/9/availability"),
 ]
 
 
@@ -470,6 +517,13 @@ SIMPLE_DELETE_CALLS = [
     ("delete_news", (2,), "/news/2"),
     ("delete_user", (3,), "/user/3"),
     ("delete_vehicle_cvm", (9, 2), "/vehicle/9/cvm/2"),
+    ("delete_infoboard_info", (5,), "/infoboard/5"),
+    (
+        "delete_operation_assignment_user",
+        ("op-1", "veh-1", 4),
+        "/operation/op-1/assignment/veh-1/users/4",
+    ),
+    ("delete_vehicle_availability", (9, 2), "/vehicle/9/availability/2"),
 ]
 
 
