@@ -1,10 +1,39 @@
-import functools
+import json
 import logging
 from typing import Literal
 
 import requests
+from pydantic import BaseModel, TypeAdapter
 
-from .models import CreateOperationModel, SetVehicleStatusModel
+from .models import (
+    AlarmGroupModel,
+    AssignedVehicleModel,
+    CreateDefectReportCategoryModel,
+    CreateDefectReportModel,
+    CreateNewsModel,
+    CreateOperationMessageModel,
+    CreateOperationModel,
+    CreateSiteInfoGroupPublicAppModel,
+    CreateSiteInfoModel,
+    CreateUserAssignmentModel,
+    CreateVehicleAvailabilityModel,
+    CreateVehicleCvmModuleModel,
+    CreateVehiclePropertyModel,
+    DiagnosticUploadRequestModel,
+    EditDefectReportCategoryModel,
+    EditDefectReportModel,
+    InviteUserModel,
+    JsonPatchOperation,
+    NewsType,
+    OperationDocumentationModel,
+    SetVehicleStatusModel,
+    UpdateNewsModel,
+    UpdateUserModel,
+    UpdateVehicleAssignmentCrewModel,
+    UploadFile,
+    UserAvailabilityModel,
+    UserOperationStatusModel,
+)
 
 LOGGER = logging.getLogger("Feuersoftware")
 ROOT_URL = "https://connectapi.feuersoftware.com/interfaces"
@@ -12,11 +41,6 @@ BASE_URL = f"{ROOT_URL}/public"
 WASSERKARTE_URL = f"{ROOT_URL}/wasserkarte"
 
 DEFAULT_TIMEOUT = 10
-
-
-class APIEndpointNotImplementedError(NotImplementedError):
-    def __init__(self, endpoint: str, url: str):
-        super().__init__(f"API endpoint '{endpoint}' ({url}) is not implemented.")
 
 
 def _drop_none(params: dict) -> dict | None:
@@ -33,13 +57,18 @@ def _odata_params(
     return {"$filter": filter, "$orderby": orderby, "$top": top, "$skip": skip}
 
 
-def not_implemented(func):
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        url = func(self, *args, **kwargs)
-        raise APIEndpointNotImplementedError(func.__name__, url)
+def _dump(model_cls: type[BaseModel], data: dict) -> str:
+    """
+    Validate data against model_cls and serialize it. Only the fields that
+    were passed are sent: an explicit None is sent as null (e.g. to clear a
+    field), an omitted field is left out of the request body.
+    """
+    return model_cls(**data).model_dump_json(exclude_unset=True)
 
-    return wrapper
+
+def _dump_list(model_cls: type[BaseModel], data: list[dict]) -> str:
+    adapter = TypeAdapter(list[model_cls])
+    return adapter.dump_json(adapter.validate_python(data), exclude_unset=True).decode()
 
 
 class FeuersoftwareAPI:
@@ -56,12 +85,13 @@ class FeuersoftwareAPI:
         url: str,
         data: str | None = None,
         params: dict | None = None,
+        headers: dict | None = None,
     ) -> requests.Response | None:
         try:
             r = requests.request(
                 method,
                 url,
-                headers=self._headers,
+                headers={**self._headers, **(headers or {})},
                 data=data,
                 params=params,
                 timeout=DEFAULT_TIMEOUT,
@@ -84,8 +114,11 @@ class FeuersoftwareAPI:
     def _post(self, url: str, data: str, params: dict | None = None):
         return self._request("POST", url, data=data, params=params)
 
-    def _put(self, url: str, data: str, params: dict | None = None):
+    def _put(self, url: str, data: str | None, params: dict | None = None):
         return self._request("PUT", url, data=data, params=params)
+
+    def _patch(self, url: str, data: str, headers: dict | None = None):
+        return self._request("PATCH", url, data=data, headers=headers)
 
     def _delete(self, url: str, params: dict | None = None):
         return self._request("DELETE", url, params=params)
@@ -98,9 +131,9 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/alarmgroup"
         return self._get(url)
 
-    @not_implemented
-    def put_alarmgroup(self, id: int):
-        return f"{BASE_URL}/alarmgroup/{id}"
+    def put_alarmgroup(self, id: int, data: dict):
+        url = f"{BASE_URL}/alarmgroup/{id}"
+        return self._put(url, _dump(AlarmGroupModel, data))
 
     # ========================================================================
     # APPOINTMENT
@@ -138,9 +171,9 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/defectReport"
         return self._get(url)
 
-    @not_implemented
     def post_defect_report(self, data: dict):
-        return f"{BASE_URL}/defectReport"
+        url = f"{BASE_URL}/defectReport"
+        return self._post(url, _dump(CreateDefectReportModel, data))
 
     def get_defect_report_history(self, id: int):
         url = f"{BASE_URL}/defectReport/{id}/statusHistory"
@@ -150,41 +183,53 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/defectReport/{id}"
         return self._get(url)
 
-    @not_implemented
     def put_defect_report(self, id: int, data: dict):
-        return f"{BASE_URL}/defectReport/{id}"
+        url = f"{BASE_URL}/defectReport/{id}"
+        return self._put(url, _dump(EditDefectReportModel, data))
 
     def delete_defect_report(self, id: int):
         url = f"{BASE_URL}/defectReport/{id}"
         return self._delete(url)
 
-    @not_implemented
     def post_defect_report_attachment(self, id: int, data: dict):
-        return f"{BASE_URL}/defectReport/{id}/attach"
+        """
+        Register an attachment (file metadata only: Name, Size, Description,
+        MimeType). Confirm the upload afterwards with
+        put_defect_report_attachment_attach.
+        """
+        url = f"{BASE_URL}/defectReport/{id}/attach"
+        return self._post(url, _dump(UploadFile, data))
 
-    @not_implemented
-    def put_defect_report_attachment_attach(self, id: int, attachmentId: int):
-        return f"{BASE_URL}/defectReport/{id}/attach/{attachmentId}"
+    def put_defect_report_attachment_attach(
+        self, id: int, attachmentId: int, ok: bool = True
+    ):
+        """Confirm (ok=True) or discard (ok=False) a registered attachment."""
+        url = f"{BASE_URL}/defectReport/{id}/attach/{attachmentId}"
+        return self._put(url, None, params={"ok": str(ok).lower()})
 
     def delete_defect_report_attachment(self, attachmentId: int):
         url = f"{BASE_URL}/defectReport/attach/{attachmentId}"
         return self._delete(url)
 
-    @not_implemented
-    def put_defect_report_attachment(self, attachmentId: int):
-        return f"{BASE_URL}/defectReport/attach/{attachmentId}"
+    # The spec only says the body of the two PUTs below is a JSON string,
+    # it doesn't document what the string is for.
 
-    @not_implemented
+    def put_defect_report_attachment(self, attachmentId: int, data: str):
+        url = f"{BASE_URL}/defectReport/attach/{attachmentId}"
+        return self._put(url, json.dumps(data))
+
     def get_defect_report_attachment(self, attachmentId: int):
-        return f"{BASE_URL}/defectReport/attach/{attachmentId}"
+        """The server redirects to the file, which requests follows."""
+        url = f"{BASE_URL}/defectReport/attach/{attachmentId}"
+        return self._get(url)
 
-    @not_implemented
     def get_defect_report_attachment_url(self, attachmentId: int):
-        return f"{BASE_URL}/defectReport/attach/url/{attachmentId}"
+        url = f"{BASE_URL}/defectReport/attach/url/{attachmentId}"
+        return self._get(url)
 
-    @not_implemented
-    def put_defect_report_attachment_abuse(self, attachmentId: int):
-        return f"{BASE_URL}/defectReport/attachabuse/{attachmentId}"
+    def put_defect_report_attachment_abuse(self, attachmentId: int, data: str):
+        url = f"{BASE_URL}/defectReport/attachabuse/{attachmentId}"
+        return self._put(url, json.dumps(data))
 
     # ========================================================================
     # DEFECT REPORT CATEGORY
@@ -194,13 +239,13 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/defectReportCategory"
         return self._get(url)
 
-    @not_implemented
     def post_defect_report_category(self, data: dict):
-        return f"{BASE_URL}/defectReportCategory"
+        url = f"{BASE_URL}/defectReportCategory"
+        return self._post(url, _dump(CreateDefectReportCategoryModel, data))
 
-    @not_implemented
     def put_defect_report_category(self, id: int, data: dict):
-        return f"{BASE_URL}/defectReportCategory/{id}"
+        url = f"{BASE_URL}/defectReportCategory/{id}"
+        return self._put(url, _dump(EditDefectReportCategoryModel, data))
 
     def delete_defect_report_category(self, id: int):
         url = f"{BASE_URL}/defectReportCategory/{id}"
@@ -210,9 +255,23 @@ class FeuersoftwareAPI:
     # DIAGNOSTICS
     # ========================================================================
 
-    @not_implemented
-    def post_diagnostics_upload_request(self, data: dict):
-        return f"{BASE_URL}/diagnostics/upload-request"
+    def post_diagnostics_upload_request(
+        self,
+        data: dict,
+        monitor_timestamp: str | None = None,
+        monitor_signature: str | None = None,
+    ):
+        url = f"{BASE_URL}/diagnostics/upload-request"
+        headers = {
+            "X-Monitor-Timestamp": monitor_timestamp,
+            "X-Monitor-Signature": monitor_signature,
+        }
+        return self._request(
+            "POST",
+            url,
+            data=_dump(DiagnosticUploadRequestModel, data),
+            headers=_drop_none(headers),
+        )
 
     # ========================================================================
     # FUNCTION
@@ -238,17 +297,17 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/infoboard"
         return self._get(url)
 
-    @not_implemented
     def post_infoboard(self, data: dict):
-        return f"{BASE_URL}/infoboard"
+        url = f"{BASE_URL}/infoboard"
+        return self._post(url, _dump(CreateSiteInfoModel, data))
 
     def get_infoboard_info(self, id: int):
         url = f"{BASE_URL}/infoboard/{id}"
         return self._get(url)
 
-    @not_implemented
     def put_infoboard_info(self, id: int, data: dict):
-        return f"{BASE_URL}/infoboard/{id}"
+        url = f"{BASE_URL}/infoboard/{id}"
+        return self._put(url, _dump(CreateSiteInfoModel, data))
 
     def delete_infoboard_info(self, id: int):
         url = f"{BASE_URL}/infoboard/{id}"
@@ -258,13 +317,13 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/infoboard/groups"
         return self._get(url)
 
-    @not_implemented
     def post_infoboard_group(self, data: dict):
-        return f"{BASE_URL}/infoboard/groups"
+        url = f"{BASE_URL}/infoboard/groups"
+        return self._post(url, _dump(CreateSiteInfoGroupPublicAppModel, data))
 
-    @not_implemented
     def put_infoboard_group(self, id: int, data: dict):
-        return f"{BASE_URL}/infoboard/groups/{id}"
+        url = f"{BASE_URL}/infoboard/groups/{id}"
+        return self._put(url, _dump(CreateSiteInfoGroupPublicAppModel, data))
 
     # ========================================================================
     # MAILING LISTS
@@ -282,13 +341,15 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/news"
         return self._get(url)
 
-    @not_implemented
-    def post_news(self, data: dict):
-        return f"{BASE_URL}/news"
+    def post_news(self, data: dict, news_type: NewsType | int | None = None):
+        """news_type defaults to SiteNews (0) on the server side."""
+        url = f"{BASE_URL}/news"
+        params = {"newsType": None if news_type is None else int(news_type)}
+        return self._post(url, _dump(CreateNewsModel, data), params=_drop_none(params))
 
-    @not_implemented
     def put_news(self, id: int, data: dict):
-        return f"{BASE_URL}/news/{id}"
+        url = f"{BASE_URL}/news/{id}"
+        return self._put(url, _dump(UpdateNewsModel, data))
 
     def delete_news(self, id: int):
         url = f"{BASE_URL}/news/{id}"
@@ -335,49 +396,52 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/operation/{id}/message"
         return self._get(url)
 
-    @not_implemented
     def post_operation_message(self, id: str, data: dict):
-        return f"{BASE_URL}/operation/{id}/message"
+        url = f"{BASE_URL}/operation/{id}/message"
+        return self._post(url, _dump(CreateOperationMessageModel, data))
 
     def get_operation_assignment(self, id: str):
         url = f"{BASE_URL}/operation/{id}/assignment"
         return self._get(url)
 
-    @not_implemented
     def post_operation_assignment(self, id: str, data: dict):
-        return f"{BASE_URL}/operation/{id}/assignment"
+        url = f"{BASE_URL}/operation/{id}/assignment"
+        return self._post(url, _dump(AssignedVehicleModel, data))
 
     def get_operation_user_status(self, id: str):
         url = f"{BASE_URL}/operation/{id}/userstatus"
         return self._get(url)
 
-    @not_implemented
     def post_operation_user_status(self, data: dict):
-        return f"{BASE_URL}/operation/userstatus"
+        url = f"{BASE_URL}/operation/userstatus"
+        return self._post(url, _dump(UserOperationStatusModel, data))
 
     def get_operation_documentation(self, id: str):
         url = f"{BASE_URL}/operation/{id}/documentation"
         return self._get(url)
 
-    @not_implemented
     def put_operation_documentation(self, id: str, data: dict):
-        return f"{BASE_URL}/operation/{id}/documentation"
+        url = f"{BASE_URL}/operation/{id}/documentation"
+        return self._put(url, _dump(OperationDocumentationModel, data))
 
-    @not_implemented
     def put_operation_assignment_crew(self, id: str, vehicle_id: str, data: dict):
-        return f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/crew"
+        url = f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/crew"
+        return self._put(url, _dump(UpdateVehicleAssignmentCrewModel, data))
 
     def get_operation_assignment_users(self, id: str, vehicle_id: str):
         url = f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/users"
         return self._get(url)
 
-    @not_implemented
     def post_operation_assignment_user(self, id: str, vehicle_id: str, data: dict):
-        return f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/users"
+        url = f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/users"
+        return self._post(url, _dump(CreateUserAssignmentModel, data))
 
-    @not_implemented
-    def put_operation_assignment_users(self, id: str, vehicle_id: str, data: list):
-        return f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/users"
+    def put_operation_assignment_users(
+        self, id: str, vehicle_id: str, data: list[dict]
+    ):
+        """Replaces all user assignments of the vehicle."""
+        url = f"{BASE_URL}/operation/{id}/assignment/{vehicle_id}/users"
+        return self._put(url, _dump_list(CreateUserAssignmentModel, data))
 
     def delete_operation_assignment_user(
         self, id: str, vehicle_id: str, user_assignment_id: int
@@ -408,25 +472,35 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/user/{id}"
         return self._get(url)
 
-    @not_implemented
-    def put_user(self, id: int, data: dict):
-        return f"{BASE_URL}/user/{id}"
+    def put_user(self, id: str, data: dict):
+        url = f"{BASE_URL}/user/{id}"
+        return self._put(url, _dump(UpdateUserModel, data))
 
     def delete_user(self, id: int):
         url = f"{BASE_URL}/user/{id}"
         return self._delete(url)
 
-    @not_implemented
     def post_user_invite(self, data: dict):
-        return f"{BASE_URL}/user/invite"
+        url = f"{BASE_URL}/user/invite"
+        return self._post(url, _dump(InviteUserModel, data))
 
-    @not_implemented
-    def put_user_availability(self, id: int, data: dict):
-        return f"{BASE_URL}/user/{id}/availability/current"
+    def put_user_availability(self, id: str, data: dict):
+        """id can be the user id or the pager number."""
+        url = f"{BASE_URL}/user/{id}/availability/current"
+        return self._put(url, _dump(UserAvailabilityModel, data))
 
-    @not_implemented
-    def patch_user(self, id: int, data: list):
-        return f"{BASE_URL}/user/{id}"
+    def patch_user(self, id: str, data: list[dict]):
+        """
+        data is a JSON Patch document (https://jsonpatch.com/), e.g.
+        [{"op": "replace", "path": "/lastName", "value": "Doe"}].
+        Supported ops are add, remove and replace.
+        """
+        url = f"{BASE_URL}/user/{id}"
+        return self._patch(
+            url,
+            _dump_list(JsonPatchOperation, data),
+            headers={"content-type": "application/json-patch+json"},
+        )
 
     def get_user_profilepicture(self, id: int | str):
         url = f"{BASE_URL}/user/{id}/profilepicture"
@@ -514,13 +588,18 @@ class FeuersoftwareAPI:
         params = _odata_params(filter, orderby, top, skip)
         return self._get(url, params=_drop_none(params))
 
-    @not_implemented
-    def post_vehicle_availability(self, id: int, data: dict):
-        return f"{BASE_URL}/vehicle/{id}/availability"
+    # The server requires VehicleId in data to match the id in the URL, so it
+    # is filled in from id if it's missing.
 
-    @not_implemented
+    def post_vehicle_availability(self, id: int, data: dict):
+        url = f"{BASE_URL}/vehicle/{id}/availability"
+        data = {"VehicleId": id, **data}
+        return self._post(url, _dump(CreateVehicleAvailabilityModel, data))
+
     def put_vehicle_availability(self, id: int, availability_id: int, data: dict):
-        return f"{BASE_URL}/vehicle/{id}/availability/{availability_id}"
+        url = f"{BASE_URL}/vehicle/{id}/availability/{availability_id}"
+        data = {"VehicleId": id, **data}
+        return self._put(url, _dump(CreateVehicleAvailabilityModel, data))
 
     def delete_vehicle_availability(self, id: int, availability_id: int):
         url = f"{BASE_URL}/vehicle/{id}/availability/{availability_id}"
@@ -534,17 +613,17 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/vehicle/{id}/cvm"
         return self._get(url)
 
-    @not_implemented
     def post_vehicle_cvm(self, id: int, data: dict):
-        return f"{BASE_URL}/vehicle/{id}/cvm"
+        url = f"{BASE_URL}/vehicle/{id}/cvm"
+        return self._post(url, _dump(CreateVehicleCvmModuleModel, data))
 
     def get_vehicle_cvm(self, id: int, cvm_id: int):
         url = f"{BASE_URL}/vehicle/{id}/cvm/{cvm_id}"
         return self._get(url)
 
-    @not_implemented
     def put_vehicle_cvm(self, id: int, cvm_id: int, data: dict):
-        return f"{BASE_URL}/vehicle/{id}/cvm/{cvm_id}"
+        url = f"{BASE_URL}/vehicle/{id}/cvm/{cvm_id}"
+        return self._put(url, _dump(CreateVehicleCvmModuleModel, data))
 
     def delete_vehicle_cvm(self, id: int, cvm_id: int):
         url = f"{BASE_URL}/vehicle/{id}/cvm/{cvm_id}"
@@ -558,9 +637,9 @@ class FeuersoftwareAPI:
         url = f"{BASE_URL}/vehicle/{id}/properties"
         return self._get(url)
 
-    @not_implemented
-    def post_vehicle_properties(self, id: int, data: dict):
-        return f"{BASE_URL}/vehicle/{id}/properties"
+    def post_vehicle_properties(self, id: int, data: list[dict]):
+        url = f"{BASE_URL}/vehicle/{id}/properties"
+        return self._post(url, _dump_list(CreateVehiclePropertyModel, data))
 
     # ========================================================================
     # WASSERKARTE

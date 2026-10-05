@@ -20,8 +20,8 @@ from pydantic import ValidationError
 from feuersoftware.api import (
     DEFAULT_TIMEOUT,
     WASSERKARTE_URL,
-    APIEndpointNotImplementedError,
 )
+from feuersoftware.models import NewsType
 
 # ============================================================================
 # CHANGE #1 regression test: delete_vehicle_cvm must issue a DELETE, not a GET
@@ -371,83 +371,363 @@ def test_delete_accepts_params_kwarg(api, base_url, requests_mock):
 
 
 # ============================================================================
-# CHANGE #9: not_implemented decorator
+# Endpoints with a request body (parametrized: validate, serialize, send)
 # ============================================================================
 
 
-NOT_IMPLEMENTED_CALLS = [
-    ("put_alarmgroup", (5,)),
-    ("post_defect_report", ({},)),
-    ("put_defect_report", (1, {})),
-    ("post_defect_report_attachment", (1, {})),
-    ("put_defect_report_attachment_attach", (1, 2)),
-    ("put_defect_report_attachment", (1,)),
-    ("get_defect_report_attachment", (1,)),
-    ("get_defect_report_attachment_url", (1,)),
-    ("put_defect_report_attachment_abuse", (1,)),
-    ("post_defect_report_category", ({},)),
-    ("put_defect_report_category", (1, {})),
-    ("post_news", ({},)),
-    ("put_news", (1, {})),
-    ("post_operation_message", ("1", {})),
-    ("post_operation_assignment", ("1", {})),
-    ("post_operation_user_status", ({},)),
-    ("put_user", (1, {})),
-    ("post_user_invite", ({},)),
-    ("put_user_availability", (1, {})),
-    ("post_vehicle_cvm", (1, {})),
-    ("put_vehicle_cvm", (1, 2, {})),
-    ("post_vehicle_properties", (1, {})),
-    ("post_diagnostics_upload_request", ({},)),
-    ("post_infoboard", ({},)),
-    ("put_infoboard_info", (1, {})),
-    ("post_infoboard_group", ({},)),
-    ("put_infoboard_group", (1, {})),
-    ("put_operation_documentation", ("op-1", {})),
-    ("put_operation_assignment_crew", ("op-1", "veh-1", {})),
-    ("post_operation_assignment_user", ("op-1", "veh-1", {})),
-    ("put_operation_assignment_users", ("op-1", "veh-1", [])),
-    ("patch_user", (1, [])),
-    ("post_vehicle_availability", (1, {})),
-    ("put_vehicle_availability", (1, 2, {})),
+BODY_CALLS = [
+    # (method_name, args, http_method, path, expected_body)
+    (
+        "put_alarmgroup",
+        (5, {"Name": "Vollalarm", "Users": [{"Email": "a@b.de", "UserName": "a"}]}),
+        "PUT",
+        "/alarmgroup/5",
+        {"Name": "Vollalarm", "Users": [{"Email": "a@b.de", "UserName": "a"}]},
+    ),
+    (
+        "post_defect_report",
+        (
+            {
+                "SiteId": 1,
+                "Status": 0,
+                "ShortDescription": "Blaulicht defekt",
+                "DetailedDescription": "Hinten links",
+            },
+        ),
+        "POST",
+        "/defectReport",
+        {
+            "SiteId": 1,
+            "Status": 0,
+            "ShortDescription": "Blaulicht defekt",
+            "DetailedDescription": "Hinten links",
+        },
+    ),
+    (
+        "put_defect_report",
+        (7, {"Status": 3, "ShortDescription": "x", "DetailedDescription": "y"}),
+        "PUT",
+        "/defectReport/7",
+        {"Status": 3, "ShortDescription": "x", "DetailedDescription": "y"},
+    ),
+    (
+        "post_defect_report_attachment",
+        (7, {"Name": "foto.jpg", "Size": 1234, "MimeType": "image/jpeg"}),
+        "POST",
+        "/defectReport/7/attach",
+        {"Name": "foto.jpg", "Size": 1234, "MimeType": "image/jpeg"},
+    ),
+    (
+        "put_defect_report_attachment",
+        (3, "text"),
+        "PUT",
+        "/defectReport/attach/3",
+        "text",
+    ),
+    (
+        "put_defect_report_attachment_abuse",
+        (3, "spam"),
+        "PUT",
+        "/defectReport/attachabuse/3",
+        "spam",
+    ),
+    (
+        "post_defect_report_category",
+        ({"Name": "Fahrzeug", "SiteId": 2},),
+        "POST",
+        "/defectReportCategory",
+        {"Name": "Fahrzeug", "SiteId": 2},
+    ),
+    (
+        "put_defect_report_category",
+        (4, {"Name": "Gerät"}),
+        "PUT",
+        "/defectReportCategory/4",
+        {"Name": "Gerät"},
+    ),
+    (
+        "post_infoboard",
+        ({"InfoGroupId": 1, "Description": "ILS", "InfoType": 0, "Value": "112"},),
+        "POST",
+        "/infoboard",
+        {"InfoGroupId": 1, "Description": "ILS", "InfoType": 0, "Value": "112"},
+    ),
+    (
+        "put_infoboard_info",
+        (5, {"InfoGroupId": 1, "Description": "ILS", "InfoType": 4, "Value": "x"}),
+        "PUT",
+        "/infoboard/5",
+        {"InfoGroupId": 1, "Description": "ILS", "InfoType": 4, "Value": "x"},
+    ),
+    (
+        "post_infoboard_group",
+        ({"Name": "Notrufnummern"},),
+        "POST",
+        "/infoboard/groups",
+        {"Name": "Notrufnummern"},
+    ),
+    (
+        "put_infoboard_group",
+        (2, {"Name": "Kontakte", "SiteId": 1}),
+        "PUT",
+        "/infoboard/groups/2",
+        {"Name": "Kontakte", "SiteId": 1},
+    ),
+    (
+        "put_news",
+        (2, {"Title": "T", "Content": "C", "Start": "2026-10-05", "End": "2026-10-06"}),
+        "PUT",
+        "/news/2",
+        {"Title": "T", "Content": "C", "Start": "2026-10-05", "End": "2026-10-06"},
+    ),
+    (
+        "post_operation_message",
+        ("op-1", {"MessageText": "Lage unter Kontrolle", "Source": "ELW"}),
+        "POST",
+        "/operation/op-1/message",
+        {"MessageText": "Lage unter Kontrolle", "Source": "ELW"},
+    ),
+    (
+        "post_operation_assignment",
+        ("op-1", {"RadioId": "1/44/1", "Source": "ILS"}),
+        "POST",
+        "/operation/op-1/assignment",
+        {"RadioId": "1/44/1", "Source": "ILS"},
+    ),
+    (
+        "post_operation_user_status",
+        ({"OperationId": 1, "Status": 1, "TimeUntilArrival": {"Duration": 300}},),
+        "POST",
+        "/operation/userstatus",
+        {"OperationId": 1, "Status": 1, "TimeUntilArrival": {"Duration": 300}},
+    ),
+    (
+        "put_operation_documentation",
+        ("op-1", {"Leader": "Max", "Comments": None}),
+        "PUT",
+        "/operation/op-1/documentation",
+        {"Leader": "Max", "Comments": None},
+    ),
+    (
+        "put_operation_assignment_crew",
+        ("op-1", "veh-1", {"Crew": 6, "RespiratorCarriers": 2}),
+        "PUT",
+        "/operation/op-1/assignment/veh-1/crew",
+        {"Crew": 6, "RespiratorCarriers": 2},
+    ),
+    (
+        "post_operation_assignment_user",
+        ("op-1", "veh-1", {"UserId": "u1", "Position": 2}),
+        "POST",
+        "/operation/op-1/assignment/veh-1/users",
+        {"UserId": "u1", "Position": 2},
+    ),
+    (
+        "put_operation_assignment_users",
+        ("op-1", "veh-1", [{"UserId": "u1", "Position": 1}, {"UserId": "u2"}]),
+        "PUT",
+        "/operation/op-1/assignment/veh-1/users",
+        [{"UserId": "u1", "Position": 1}, {"UserId": "u2"}],
+    ),
+    (
+        "put_user",
+        ("u1", {"Email": "a@b.de", "UserName": "a@b.de", "FirstName": "Max"}),
+        "PUT",
+        "/user/u1",
+        {"Email": "a@b.de", "UserName": "a@b.de", "FirstName": "Max"},
+    ),
+    (
+        "post_user_invite",
+        ({"Email": "a@b.de", "Roles": [{"RoleName": "User"}]},),
+        "POST",
+        "/user/invite",
+        {"Email": "a@b.de", "Roles": [{"RoleName": "User"}]},
+    ),
+    (
+        "put_user_availability",
+        ("12345", {"Status": 2, "Info": "Urlaub"}),
+        "PUT",
+        "/user/12345/availability/current",
+        {"Status": 2, "Info": "Urlaub"},
+    ),
+    (
+        "post_vehicle_availability",
+        (9, {"Info": "Werkstatt", "Status": 2}),
+        "POST",
+        "/vehicle/9/availability",
+        {"VehicleId": 9, "Info": "Werkstatt", "Status": 2},
+    ),
+    (
+        "put_vehicle_availability",
+        (9, 3, {"Info": "Werkstatt", "VehicleId": 9}),
+        "PUT",
+        "/vehicle/9/availability/3",
+        {"VehicleId": 9, "Info": "Werkstatt"},
+    ),
+    (
+        "post_vehicle_cvm",
+        (
+            9,
+            {"SerialNumber": "SN1", "Description": "CVM", "OverrideDescription": False},
+        ),
+        "POST",
+        "/vehicle/9/cvm",
+        {"SerialNumber": "SN1", "Description": "CVM", "OverrideDescription": False},
+    ),
+    (
+        "put_vehicle_cvm",
+        (
+            9,
+            2,
+            {"SerialNumber": "SN1", "Description": "CVM", "OverrideDescription": True},
+        ),
+        "PUT",
+        "/vehicle/9/cvm/2",
+        {"SerialNumber": "SN1", "Description": "CVM", "OverrideDescription": True},
+    ),
+    (
+        "post_vehicle_properties",
+        (9, [{"Key": "Tank", "Value": "80", "Unit": "%", "Type": 1}]),
+        "POST",
+        "/vehicle/9/properties",
+        [{"Key": "Tank", "Value": "80", "Unit": "%", "Type": 1}],
+    ),
 ]
 
 
-@pytest.mark.parametrize("method_name, args", NOT_IMPLEMENTED_CALLS)
-def test_not_implemented_endpoints_raise_without_network_call(
-    api, requests_mock, method_name, args
+@pytest.mark.parametrize(
+    "method_name, args, http_method, path, expected_body", BODY_CALLS
+)
+def test_body_endpoints(
+    api, base_url, requests_mock, method_name, args, http_method, path, expected_body
 ):
     """
-    Every stub endpoint should raise APIEndpointNotImplementedError and
-    must NOT attempt any HTTP call in the process. No mocks are
-    registered here on purpose: if the decorator regressed and let a
-    real request slip through, requests_mock would raise its own
-    NoMockAddress error instead of APIEndpointNotImplementedError,
-    which would also fail this test (just with a different exception
-    type), pointing at the actual bug.
+    Checks method, URL and that exactly the passed fields are sent. Fields
+    that weren't passed must not show up as null in the body.
     """
-    method = getattr(api, method_name)
-    with pytest.raises(APIEndpointNotImplementedError) as exc_info:
-        method(*args)
+    requests_mock.register_uri(http_method, f"{base_url}{path}", status_code=200)
 
-    assert method_name in str(exc_info.value)
+    result = getattr(api, method_name)(*args)
+
+    assert result is not None
+    assert result.ok
+    assert requests_mock.last_request.method == http_method
+    assert json.loads(requests_mock.last_request.text) == expected_body
+
+
+@pytest.mark.parametrize(
+    "method_name, args",
+    [
+        ("put_alarmgroup", (5, {"Name": "x"})),  # Users missing
+        ("post_defect_report", ({"SiteId": 1, "Status": 0},)),
+        (
+            "put_defect_report",
+            (7, {"Status": 9, "ShortDescription": "x", "DetailedDescription": "y"}),
+        ),
+        ("post_defect_report_attachment", (7, {})),
+        ("post_defect_report_category", ({"Name": ""},)),
+        (
+            "post_infoboard",
+            ({"InfoGroupId": 1, "Description": "x", "InfoType": 9, "Value": "y"},),
+        ),
+        (
+            "post_news",
+            ({"Title": "T", "Content": "C", "Start": "nope", "End": "2026-10-06"},),
+        ),
+        (
+            "post_operation_message",
+            (
+                "op-1",
+                {"MessageText": "x"},
+            ),
+        ),
+        ("post_operation_user_status", ({"Status": 7},)),
+        ("put_operation_documentation", ("op-1", {"Leader": "x" * 256})),
+        ("post_operation_assignment_user", ("op-1", "veh-1", {"Position": 5})),
+        ("put_operation_assignment_users", ("op-1", "veh-1", [{"Position": 5}])),
+        ("put_user", ("u1", {"FirstName": "Max"})),
+        ("post_user_invite", ({"FirstName": "Max"},)),
+        ("put_user_availability", ("u1", {"Info": "x"})),
+        ("patch_user", ("u1", [{"op": "move", "path": "/a"}])),
+        ("post_vehicle_availability", (9, {"Status": 0})),
+        ("post_vehicle_cvm", (9, {"SerialNumber": "SN1"})),
+        ("post_vehicle_properties", (9, [{"Value": "x"}])),
+    ],
+)
+def test_body_endpoints_validate_before_sending(api, requests_mock, method_name, args):
+    # No mocks registered: a request slipping through would raise
+    # NoMockAddress instead of ValidationError.
+    with pytest.raises(ValidationError):
+        getattr(api, method_name)(*args)
+
     assert requests_mock.call_count == 0
 
 
-def test_not_implemented_error_message_includes_url(api):
-    with pytest.raises(APIEndpointNotImplementedError) as exc_info:
-        api.put_alarmgroup(5)
+def test_post_news_news_type(api, base_url, requests_mock):
+    requests_mock.post(f"{base_url}/news", status_code=200, json={})
+    data = {"Title": "T", "Content": "C", "Start": "2026-10-05", "End": "2026-10-06"}
 
-    message = str(exc_info.value)
-    assert "put_alarmgroup" in message
-    assert "/alarmgroup/5" in message
+    api.post_news(data)
+    assert requests_mock.last_request.qs == {}
+    assert json.loads(requests_mock.last_request.text) == data
+
+    api.post_news(data, news_type=NewsType.OrganizationNews)
+    assert requests_mock.last_request.qs["newstype"] == ["1"]
 
 
-def test_post_user_invite_stub_url(api):
-    with pytest.raises(APIEndpointNotImplementedError) as exc_info:
-        api.post_user_invite({})
+def test_patch_user_sends_json_patch(api, base_url, requests_mock):
+    requests_mock.patch(f"{base_url}/user/u1", status_code=200, json={})
+    patch = [
+        {"op": "replace", "path": "/lastName", "value": "Doe"},
+        {"op": "remove", "path": "/address/district"},
+    ]
 
-    assert "/user/invite" in str(exc_info.value)
+    api.patch_user("u1", patch)
+
+    request = requests_mock.last_request
+    assert request.method == "PATCH"
+    assert request.headers["content-type"] == "application/json-patch+json"
+    assert json.loads(request.text) == patch
+
+
+def test_put_defect_report_attachment_attach_ok_param(api, base_url, requests_mock):
+    url = f"{base_url}/defectReport/7/attach/3"
+    requests_mock.put(url, status_code=204)
+
+    api.put_defect_report_attachment_attach(7, 3)
+    assert requests_mock.last_request.qs["ok"] == ["true"]
+    assert requests_mock.last_request.body is None
+
+    api.put_defect_report_attachment_attach(7, 3, ok=False)
+    assert requests_mock.last_request.qs["ok"] == ["false"]
+
+
+def test_post_diagnostics_upload_request_headers(api, base_url, requests_mock):
+    requests_mock.post(f"{base_url}/diagnostics/upload-request", status_code=200)
+
+    api.post_diagnostics_upload_request({"Message": "hi"})
+    assert "X-Monitor-Timestamp" not in requests_mock.last_request.headers
+    assert json.loads(requests_mock.last_request.text) == {"Message": "hi"}
+
+    api.post_diagnostics_upload_request(
+        {"Message": "hi"}, monitor_timestamp="123", monitor_signature="sig"
+    )
+    headers = requests_mock.last_request.headers
+    assert headers["X-Monitor-Timestamp"] == "123"
+    assert headers["X-Monitor-Signature"] == "sig"
+    # Extra headers must not replace the default ones
+    assert headers["authorization"].startswith("bearer ")
+
+
+def test_put_vehicle_availability_keeps_explicit_vehicle_id(
+    api, base_url, requests_mock
+):
+    requests_mock.put(f"{base_url}/vehicle/9/availability/3", status_code=200)
+
+    api.put_vehicle_availability(9, 3, {"Info": "x", "VehicleId": 10})
+
+    # Server will reject the mismatch, but we don't silently override it
+    assert json.loads(requests_mock.last_request.text)["VehicleId"] == 10
 
 
 # ============================================================================
@@ -461,6 +741,8 @@ SIMPLE_GET_CALLS = [
     ("get_defect_reports", (), "/defectReport"),
     ("get_defect_report_history", (7,), "/defectReport/7/statusHistory"),
     ("get_defect_report", (7,), "/defectReport/7"),
+    ("get_defect_report_attachment", (3,), "/defectReport/attach/3"),
+    ("get_defect_report_attachment_url", (3,), "/defectReport/attach/url/3"),
     ("get_defect_report_categories", (), "/defectReportCategory"),
     ("get_functions", (), "/function"),
     ("get_news", (), "/news"),
